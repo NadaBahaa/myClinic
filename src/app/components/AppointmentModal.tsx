@@ -6,14 +6,32 @@ export interface Appointment {
   id: string;
   patientName: string;
   patientEmail: string;
+  patientId?: string;
   doctorId: string;
   doctorName: string;
   services: string[];
+  serviceIds?: string[];
   date: Date;
   time: string;
+  startTime?: string;
+  endTime?: string;
+  duration?: number;
   status: 'scheduled' | 'completed' | 'cancelled';
   notes?: string;
 }
+
+/** Minimal shape used for conflict checks (calendar vs modal shape). Export for CalendarView. */
+export type AppointmentLike = {
+  id?: string;
+  doctorId: string;
+  patientName: string;
+  date: Date | string;
+  status: string;
+  services?: string[];
+  time?: string;
+  startTime?: string;
+  duration?: number;
+};
 
 interface AppointmentModalProps {
   appointment?: Appointment;
@@ -21,7 +39,11 @@ interface AppointmentModalProps {
   selectedTime?: string;
   onClose: () => void;
   onSave: (appointment: Appointment) => void;
-  existingAppointments?: Appointment[];
+  existingAppointments?: AppointmentLike[];
+  /** When provided, used for dropdowns and create API (ids sent) */
+  existingPatients?: { id: string; name: string; email?: string }[];
+  existingDoctors?: { id: string; name: string; specialty?: string }[];
+  existingServices?: { id: string; name: string; duration: number }[];
 }
 
 const mockPatients = [
@@ -52,21 +74,28 @@ export default function AppointmentModal({
   onClose,
   onSave,
   existingAppointments = [],
+  existingPatients,
+  existingDoctors,
+  existingServices,
 }: AppointmentModalProps) {
   const isEditing = !!appointment;
+  const patients = existingPatients?.length ? existingPatients : mockPatients;
+  const doctors = existingDoctors?.length ? existingDoctors : mockDoctors;
+  const servicesList = existingServices?.length ? existingServices : mockServices;
 
   // Convert old appointment format to new format if needed
   const initialServices = appointment?.services || 
-    (appointment?.serviceName ? [appointment.serviceName] : []);
+    (appointment?.serviceName ? appointment.serviceName.split(',').map((s: string) => s.trim()).filter(Boolean) : []);
 
   const [formData, setFormData] = useState({
     patientName: appointment?.patientName || '',
     patientEmail: appointment?.patientEmail || '',
+    patientId: (appointment as Appointment & { patientId?: string })?.patientId || '',
     doctorId: appointment?.doctorId || '',
     doctorName: appointment?.doctorName || '',
     services: initialServices,
     date: appointment?.date || selectedDate || new Date(),
-    time: appointment?.time || appointment?.startTime || selectedTime || '09:00',
+    time: appointment?.time || (appointment as Appointment & { startTime?: string })?.startTime || selectedTime || '09:00',
     status: appointment?.status || 'scheduled' as const,
     notes: appointment?.notes || '',
   });
@@ -76,7 +105,7 @@ export default function AppointmentModal({
   };
 
   const handleDoctorChange = (doctorId: string) => {
-    const doctor = mockDoctors.find((d) => d.id === doctorId);
+    const doctor = doctors.find((d) => d.id === doctorId);
     setFormData((prev) => ({
       ...prev,
       doctorId,
@@ -85,11 +114,12 @@ export default function AppointmentModal({
   };
 
   const handlePatientChange = (patientName: string) => {
-    const patient = mockPatients.find((p) => p.name === patientName);
+    const patient = patients.find((p) => p.name === patientName);
     setFormData((prev) => ({
       ...prev,
       patientName,
       patientEmail: patient?.email || '',
+      patientId: patient?.id || '',
     }));
   };
 
@@ -105,16 +135,48 @@ export default function AppointmentModal({
   // Calculate total duration of selected services
   const getTotalDuration = () => {
     return formData.services.reduce((total, serviceName) => {
-      const service = mockServices.find(s => s.name === serviceName);
+      const service = servicesList.find(s => s.name === serviceName);
       return total + (service?.duration || 0);
     }, 0);
   };
 
-  // Parse time string to minutes
+  // Parse time string to minutes (supports "09:00" or "11:00 AM")
   const timeToMinutes = (time: string): number => {
-    const [hours, minutes] = time.split(':').map(Number);
+    const match = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!match) return 0;
+    let [, h, m, ampm] = match;
+    let hours = parseInt(h!, 10);
+    const minutes = parseInt(m!, 10);
+    if (ampm) {
+      if (ampm.toUpperCase() === 'PM' && hours !== 12) hours += 12;
+      if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+    }
     return hours * 60 + minutes;
   };
+
+  const minutesToTime = (mins: number): string => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+  };
+
+  // Safe helpers for appointments that may come from API (duration/startTime) or modal (services/time)
+  const getExistingDuration = (apt: { services?: string[]; duration?: number }): number => {
+    if (apt.duration != null && typeof apt.duration === 'number') return apt.duration;
+    if (Array.isArray(apt.services) && apt.services.length > 0) {
+      return apt.services.reduce((total, serviceName) => {
+        const service = servicesList.find(s => s.name === serviceName);
+        return total + (service?.duration || 0);
+      }, 0);
+    }
+    return 0;
+  };
+
+  const getAptTime = (apt: { time?: string; startTime?: string }): string =>
+    apt.time ?? (apt as { startTime?: string }).startTime ?? '00:00';
+
+  const getAptDateString = (apt: { date: Date | string }): string =>
+    typeof apt.date === 'string' ? apt.date : (apt.date as Date).toDateString?.() ?? '';
 
   // Check for doctor conflicts
   const checkDoctorConflict = (): boolean => {
@@ -123,24 +185,15 @@ export default function AppointmentModal({
     const dateStr = formData.date.toDateString();
 
     return existingAppointments.some((apt) => {
-      // Skip the current appointment if editing
       if (isEditing && apt.id === appointment.id) return false;
-
-      // Check if same doctor and same date
       if (apt.doctorId !== formData.doctorId) return false;
-      if (apt.date.toDateString() !== dateStr) return false;
+      if (getAptDateString(apt) !== dateStr) return false;
       if (apt.status === 'cancelled') return false;
 
-      // Calculate existing appointment duration
-      const existingDuration = apt.services.reduce((total, serviceName) => {
-        const service = mockServices.find(s => s.name === serviceName);
-        return total + (service?.duration || 0);
-      }, 0);
-
-      const existingStart = timeToMinutes(apt.time);
+      const existingDuration = getExistingDuration(apt);
+      const existingStart = timeToMinutes(getAptTime(apt));
       const existingEnd = existingStart + existingDuration;
 
-      // Check for overlap
       return (appointmentStart < existingEnd && appointmentEnd > existingStart);
     });
   };
@@ -152,24 +205,15 @@ export default function AppointmentModal({
     const dateStr = formData.date.toDateString();
 
     return existingAppointments.some((apt) => {
-      // Skip the current appointment if editing
       if (isEditing && apt.id === appointment.id) return false;
-
-      // Check if same patient and same date
       if (apt.patientName !== formData.patientName) return false;
-      if (apt.date.toDateString() !== dateStr) return false;
+      if (getAptDateString(apt) !== dateStr) return false;
       if (apt.status === 'cancelled') return false;
 
-      // Calculate existing appointment duration
-      const existingDuration = apt.services.reduce((total, serviceName) => {
-        const service = mockServices.find(s => s.name === serviceName);
-        return total + (service?.duration || 0);
-      }, 0);
-
-      const existingStart = timeToMinutes(apt.time);
+      const existingDuration = getExistingDuration(apt);
+      const existingStart = timeToMinutes(getAptTime(apt));
       const existingEnd = existingStart + existingDuration;
 
-      // Check for overlap
       return (appointmentStart < existingEnd && appointmentEnd > existingStart);
     });
   };
@@ -184,7 +228,7 @@ export default function AppointmentModal({
 
     // Check for doctor conflicts
     if (checkDoctorConflict()) {
-      const doctor = mockDoctors.find(d => d.id === formData.doctorId);
+      const doctor = doctors.find(d => d.id === formData.doctorId);
       toast.error(`${doctor?.name} already has an appointment at this time`);
       return;
     }
@@ -195,6 +239,10 @@ export default function AppointmentModal({
       return;
     }
 
+    const duration = getTotalDuration();
+    const startMins = timeToMinutes(formData.time);
+    const endTime = minutesToTime(startMins + duration);
+
     const appointmentData: Appointment = {
       id: appointment?.id || `apt-${Date.now()}`,
       patientName: formData.patientName,
@@ -204,9 +252,18 @@ export default function AppointmentModal({
       services: formData.services,
       date: formData.date,
       time: formData.time,
+      startTime: minutesToTime(startMins),
+      endTime,
+      duration,
       status: formData.status,
       notes: formData.notes,
     };
+    if (formData.patientId) (appointmentData as Appointment).patientId = formData.patientId;
+    if (existingServices?.length) {
+      (appointmentData as Appointment).serviceIds = formData.services
+        .map(name => servicesList.find(s => s.name === name)?.id)
+        .filter((id): id is string => !!id);
+    }
 
     onSave(appointmentData);
     onClose();
@@ -238,7 +295,7 @@ export default function AppointmentModal({
               required
             >
               <option value="">Select a patient</option>
-              {mockPatients.map((patient) => (
+              {patients.map((patient) => (
                 <option key={patient.id} value={patient.name}>
                   {patient.name}
                 </option>
@@ -262,7 +319,7 @@ export default function AppointmentModal({
               required
             >
               <option value="">Select a doctor</option>
-              {mockDoctors.map((doctor) => (
+              {doctors.map((doctor) => (
                 <option key={doctor.id} value={doctor.id}>
                   {doctor.name} - {doctor.specialty}
                 </option>
@@ -277,7 +334,7 @@ export default function AppointmentModal({
               Services * (Select multiple)
             </label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {mockServices.map((service) => (
+              {servicesList.map((service) => (
                 <label
                   key={service.id}
                   className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${

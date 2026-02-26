@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Mail, Phone, Briefcase, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePractitionerTypes } from '../contexts/PractitionerTypeContext';
@@ -21,7 +21,7 @@ export interface Doctor {
 interface DoctorDetailModalProps {
   doctor: Doctor | null;
   onClose: () => void;
-  onSave: (doctor: Doctor) => void;
+  onSave: (doctor: Doctor) => void | Promise<void>;
   onDelete?: (id: string) => void;
 }
 
@@ -29,8 +29,13 @@ const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'S
 
 export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }: DoctorDetailModalProps) {
   const isEditing = !!doctor;
-  const { getActivePractitionerTypes, getPractitionerTypeById } = usePractitionerTypes();
+  const { getActivePractitionerTypes, getPractitionerTypeById, refetch } = usePractitionerTypes();
   const activePractitionerTypes = getActivePractitionerTypes();
+
+  // Ensure practitioner types are loaded when modal opens (e.g. dropdown was empty)
+  useEffect(() => {
+    if (activePractitionerTypes.length === 0) refetch();
+  }, []);
   
   const [formData, setFormData] = useState<Doctor>(
     doctor || {
@@ -52,6 +57,13 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
     ? getPractitionerTypeById(formData.practitionerTypeId)
     : undefined;
 
+  const requiredCerts = Array.isArray(selectedPractitionerType?.requiredCertifications)
+    ? selectedPractitionerType.requiredCertifications
+    : (selectedPractitionerType?.requiredCertifications ? [String(selectedPractitionerType.requiredCertifications)] : []);
+  const allowedCategories = Array.isArray(selectedPractitionerType?.allowedServiceCategories)
+    ? selectedPractitionerType.allowedServiceCategories
+    : (selectedPractitionerType?.allowedServiceCategories ? [String(selectedPractitionerType.allowedServiceCategories)] : []);
+
   const handleChange = (field: keyof Doctor, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -65,7 +77,7 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.phone || !formData.specialty) {
@@ -75,7 +87,7 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
 
     // Check if practitioner type is selected and validate certifications
     if (formData.practitionerTypeId && selectedPractitionerType) {
-      if (selectedPractitionerType.requiredCertifications.length > 0 && !formData.qualifications) {
+      if (requiredCerts.length > 0 && !formData.qualifications) {
         toast.warning('This practitioner type requires certifications. Please add qualifications.');
       }
     }
@@ -85,8 +97,7 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
       id: formData.id || `d-${Date.now()}`,
     };
 
-    onSave(doctorData);
-    toast.success(isEditing ? 'Doctor updated successfully' : 'Doctor added successfully');
+    await onSave(doctorData);
     onClose();
   };
 
@@ -151,6 +162,9 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
                 >
                   <option value="">Select Type (Optional)</option>
+                  {activePractitionerTypes.length === 0 && (
+                    <option value="" disabled>Loading practitioner types...</option>
+                  )}
                   {activePractitionerTypes.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name} - {type.category}
@@ -196,11 +210,11 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Required Certifications */}
-                {selectedPractitionerType.requiredCertifications.length > 0 && (
+                {requiredCerts.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">Required Certifications:</p>
                     <ul className="text-xs text-gray-600 space-y-1">
-                      {selectedPractitionerType.requiredCertifications.map((cert, idx) => (
+                      {requiredCerts.map((cert, idx) => (
                         <li key={idx} className="flex items-start gap-1">
                           <CheckCircle2 className="w-3 h-3 mt-0.5 text-blue-600 flex-shrink-0" />
                           <span>{cert}</span>
@@ -222,11 +236,11 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
                 </div>
 
                 {/* Allowed Services */}
-                {selectedPractitionerType.allowedServiceCategories.length > 0 && (
+                {allowedCategories.length > 0 && (
                   <div className="md:col-span-2">
                     <p className="text-sm font-medium text-gray-700 mb-2">Can Perform Services:</p>
                     <div className="flex flex-wrap gap-2">
-                      {selectedPractitionerType.allowedServiceCategories.map((cat) => (
+                      {allowedCategories.map((cat) => (
                         <span key={cat} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
                           {cat}
                         </span>

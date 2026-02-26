@@ -4,23 +4,29 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster } from 'sonner';
 import Landing from './components/Landing';
 import Login from './components/Login';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import AdminDashboard from './components/AdminDashboard';
 import DoctorPortal from './components/DoctorPortal';
 import AssistantPortal from './components/AssistantPortal';
+import AccountantDashboard from './components/AccountantDashboard';
+import SuperAdminDashboard from './components/SuperAdminDashboard';
 import type { SystemUser, UserPermissions } from './components/UserDetailModal';
 import { PractitionerTypeProvider } from './contexts/PractitionerTypeContext';
 import { authService } from '../lib/services/authService';
 import { getToken } from '../lib/api';
 
 // Types
-export type UserRole = 'admin' | 'doctor' | 'assistant' | null;
+export type UserRole = 'superadmin' | 'admin' | 'doctor' | 'assistant' | 'accountant' | null;
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  isActive?: boolean;
   practitionerTypeId?: string | null;
+  doctorId?: string | null;
   permissions: UserPermissions;
 }
 
@@ -43,8 +49,17 @@ export const useAuth = () => {
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'login' | 'admin' | 'doctor' | 'assistant'>('landing');
+  const [currentPage, setCurrentPage] = useState<'landing' | 'login' | 'forgot-password' | 'reset-password' | 'admin' | 'doctor' | 'assistant' | 'accountant' | 'superadmin'>('landing');
   const [allUsers, setAllUsers] = useState<SystemUser[]>([]);
+
+  // Check for reset-password link from email (e.g. /reset-password?token=...&email=...)
+  useEffect(() => {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+    if (path === '/reset-password' && params.get('token') && params.get('email')) {
+      setCurrentPage('reset-password');
+    }
+  }, []);
 
   // Restore session on mount if token exists in localStorage
   useEffect(() => {
@@ -69,9 +84,11 @@ function App() {
   }, []);
 
   const navigateForRole = (role: UserRole) => {
-    if (role === 'admin') setCurrentPage('admin');
+    if (role === 'superadmin') setCurrentPage('superadmin');
+    else if (role === 'admin') setCurrentPage('admin');
     else if (role === 'doctor') setCurrentPage('doctor');
     else if (role === 'assistant') setCurrentPage('assistant');
+    else if (role === 'accountant') setCurrentPage('accountant');
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -101,7 +118,20 @@ function App() {
       return <Landing onLoginClick={() => setCurrentPage('login')} />;
     }
     if (currentPage === 'login') {
-      return <Login onBack={() => setCurrentPage('landing')} />;
+      return <Login onBack={() => setCurrentPage('landing')} onForgotPassword={() => setCurrentPage('forgot-password')} />;
+    }
+    if (currentPage === 'forgot-password') {
+      return <ForgotPassword onBack={() => setCurrentPage('login')} />;
+    }
+    if (currentPage === 'reset-password') {
+      const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+      return (
+        <ResetPassword
+          onBack={() => setCurrentPage('login')}
+          token={params.get('token')}
+          email={params.get('email')}
+        />
+      );
     }
     if (currentPage === 'admin' && user?.role === 'admin') {
       return <AdminDashboard />;
@@ -111,6 +141,12 @@ function App() {
     }
     if (currentPage === 'assistant' && user?.role === 'assistant') {
       return <AssistantPortal />;
+    }
+    if (currentPage === 'accountant' && user?.role === 'accountant') {
+      return <AccountantDashboard />;
+    }
+    if (currentPage === 'superadmin' && user?.role === 'superadmin') {
+      return <SuperAdminDashboard />;
     }
     return <Landing onLoginClick={() => setCurrentPage('login')} />;
   };

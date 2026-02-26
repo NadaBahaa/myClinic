@@ -11,7 +11,10 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
+    /**
+     * API routes use Bearer token auth, not session/cookies, so CSRF is not required.
+     */
     protected $except = [
-        //
+        'api/*',
     ];
 }

@@ -13,7 +13,9 @@ class UserResource extends JsonResource
             'name'               => $this->name,
             'email'              => $this->email,
             'role'               => $this->role,
+            'isActive'           => (bool) $this->is_active,
             'practitionerTypeId' => $this->practitionerType?->uuid,
+            'doctorId'           => $this->when($this->relationLoaded('doctor') && $this->doctor, fn () => $this->doctor->uuid),
             'permissions'        => $this->permissions, // uses model accessor
         ];
     }

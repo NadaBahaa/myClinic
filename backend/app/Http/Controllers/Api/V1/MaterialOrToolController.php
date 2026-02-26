@@ -19,6 +19,13 @@ class MaterialOrToolController extends Controller
         if ($type = $request->query('type')) {
             $query->where('type', $type);
         }
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('supplier', 'like', "%{$search}%")
+                  ->orWhere('notes', 'like', "%{$search}%");
+            });
+        }
 
         return response()->json(MaterialOrToolResource::collection($query->get()));
     }

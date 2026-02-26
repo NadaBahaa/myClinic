@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Bell, Send, Calendar, User, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { notificationService, type PendingReminder } from '../../lib/services/notificationService';
+import { settingsService } from '../../lib/services/settingsService';
 
 export interface Notification {
   id: string;
@@ -19,87 +21,42 @@ interface NotificationPanelProps {
 }
 
 export default function NotificationPanel({ onClose }: NotificationPanelProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [pending, setPending] = useState<PendingReminder[]>([]);
+  const [sentList, setSentList] = useState<any[]>([]);
+  const [reminderDays, setReminderDays] = useState(1);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'sent'>('upcoming');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
-  // Get upcoming appointments (for next day reminders)
-  useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Mock notifications for appointments tomorrow
-    const upcomingNotifications: Notification[] = [
-      {
-        id: 'n1',
-        type: 'scheduled',
-        patientName: 'Emma Wilson',
-        patientEmail: 'emma.wilson@email.com',
-        appointmentDate: tomorrow,
-        appointmentTime: '09:00',
-        serviceName: 'Facial Treatment',
-        status: 'pending',
-      },
-      {
-        id: 'n2',
-        type: 'scheduled',
-        patientName: 'Sophia Davis',
-        patientEmail: 'sophia.davis@email.com',
-        appointmentDate: tomorrow,
-        appointmentTime: '14:00',
-        serviceName: 'Botox Injection',
-        status: 'pending',
-      },
-    ];
-
-    const sentNotifications: Notification[] = [
-      {
-        id: 'n3',
-        type: 'sent',
-        patientName: 'Olivia Brown',
-        patientEmail: 'olivia.brown@email.com',
-        appointmentDate: new Date(),
-        appointmentTime: '10:30',
-        serviceName: 'Laser Hair Removal',
-        sentAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        status: 'sent',
-      },
-    ];
-
-    setNotifications([...upcomingNotifications, ...sentNotifications]);
+  const fetchPending = useCallback(() => {
+    notificationService.getPending().then(setPending).catch(() => toast.error('Failed to load pending reminders')).finally(() => setLoading(false));
   }, []);
 
-  const handleSendNotification = (notification: Notification) => {
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === notification.id
-          ? { ...n, status: 'sent' as const, sentAt: new Date(), type: 'sent' as const }
-          : n
-      )
-    );
-    
-    toast.success(`Reminder sent to ${notification.patientName}`, {
-      description: `Email sent to ${notification.patientEmail}`,
-    });
+  useEffect(() => {
+    setLoading(true);
+    fetchPending();
+    settingsService.get().then((s) => setReminderDays(s.reminderDaysBefore)).catch(() => {});
+  }, [fetchPending]);
+
+  useEffect(() => {
+    if (activeTab === 'sent') {
+      notificationService.getAll().then((list) => setSentList(list)).catch(() => {});
+    }
+  }, [activeTab]);
+
+  const handleSendAllNotifications = async () => {
+    if (pending.length === 0) return;
+    setSending(true);
+    try {
+      const res = await notificationService.sendReminders();
+      toast.success(`${res.sent} reminder(s) sent`, res.failed > 0 ? { description: `${res.failed} failed` } : undefined);
+      fetchPending();
+    } catch {
+      toast.error('Failed to send reminders');
+    } finally {
+      setSending(false);
+    }
   };
-
-  const handleSendAllNotifications = () => {
-    const pendingNotifications = notifications.filter(n => n.status === 'pending');
-    
-    setNotifications(prev =>
-      prev.map(n =>
-        n.status === 'pending'
-          ? { ...n, status: 'sent' as const, sentAt: new Date(), type: 'sent' as const }
-          : n
-      )
-    );
-
-    toast.success(`${pendingNotifications.length} reminders sent`, {
-      description: 'All patients have been notified',
-    });
-  };
-
-  const upcomingNotifications = notifications.filter(n => n.status === 'pending');
-  const sentNotifications = notifications.filter(n => n.status === 'sent');
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center md:justify-end z-50 p-0 md:p-4">
@@ -112,7 +69,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
             </div>
             <div>
               <h2 className="text-xl text-gray-900">Notifications</h2>
-              <p className="text-sm text-gray-600">Appointment reminders</p>
+              <p className="text-sm text-gray-600">Remind {reminderDays} day{reminderDays !== 1 ? 's' : ''} before</p>
             </div>
           </div>
           <button
@@ -133,7 +90,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
                 : 'border-transparent text-gray-600'
             }`}
           >
-            Upcoming ({upcomingNotifications.length})
+            Upcoming ({pending.length})
           </button>
           <button
             onClick={() => setActiveTab('sent')}
@@ -143,19 +100,20 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
                 : 'border-transparent text-gray-600'
             }`}
           >
-            Sent ({sentNotifications.length})
+            Sent ({sentList.length})
           </button>
         </div>
 
         {/* Send All Button */}
-        {activeTab === 'upcoming' && upcomingNotifications.length > 0 && (
+        {activeTab === 'upcoming' && pending.length > 0 && (
           <div className="p-4 border-b border-gray-200">
             <button
+              disabled={sending}
               onClick={handleSendAllNotifications}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50"
             >
               <Send className="w-5 h-5" />
-              Send All Reminders ({upcomingNotifications.length})
+              {sending ? 'Sending…' : `Send All Reminders (${pending.length})`}
             </button>
           </div>
         )}
@@ -164,18 +122,17 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
         <div className="flex-1 overflow-auto p-6">
           {activeTab === 'upcoming' && (
             <div className="space-y-4">
-              {upcomingNotifications.length === 0 ? (
+              {loading ? (
+                <p className="text-gray-500 text-center py-8">Loading…</p>
+              ) : pending.length === 0 ? (
                 <div className="text-center py-12 text-gray-600">
                   <Bell className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                   <p>No upcoming reminders</p>
+                  <p className="text-sm mt-1">Appointments 1–{reminderDays} day(s) ahead already reminded or none scheduled.</p>
                 </div>
               ) : (
-                upcomingNotifications.map((notification) => (
-                  <NotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    onSend={handleSendNotification}
-                  />
+                pending.map((p) => (
+                  <PendingCard key={p.id} pending={p} />
                 ))
               )}
             </div>
@@ -183,17 +140,14 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
 
           {activeTab === 'sent' && (
             <div className="space-y-4">
-              {sentNotifications.length === 0 ? (
+              {sentList.length === 0 ? (
                 <div className="text-center py-12 text-gray-600">
                   <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
                   <p>No sent notifications</p>
                 </div>
               ) : (
-                sentNotifications.map((notification) => (
-                  <NotificationCard
-                    key={notification.id}
-                    notification={notification}
-                  />
+                sentList.map((rec: any) => (
+                  <SentCard key={rec.id} record={rec} />
                 ))
               )}
             </div>
@@ -204,62 +158,44 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
   );
 }
 
-interface NotificationCardProps {
-  notification: Notification;
-  onSend?: (notification: Notification) => void;
-}
-
-function NotificationCard({ notification, onSend }: NotificationCardProps) {
-  const isSent = notification.status === 'sent';
-
+function PendingCard({ pending }: { pending: PendingReminder }) {
   return (
-    <div className={`p-4 rounded-lg border-2 ${
-      isSent ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'
-    }`}>
+    <div className="p-4 rounded-lg border-2 border-blue-200 bg-blue-50">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <User className="w-4 h-4 text-gray-600" />
-            <h3 className="font-medium text-gray-900">{notification.patientName}</h3>
+            <h3 className="font-medium text-gray-900">{pending.patientName}</h3>
           </div>
-          <p className="text-sm text-gray-600">{notification.patientEmail}</p>
+          <p className="text-sm text-gray-600">{pending.patientEmail || '—'}</p>
+          {pending.patientPhone && <p className="text-xs text-gray-500">{pending.patientPhone}</p>}
         </div>
-        {isSent && (
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-        )}
       </div>
-
-      <div className="space-y-2 mb-3">
+      <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm text-gray-700">
           <Calendar className="w-4 h-4" />
-          <span>
-            {notification.appointmentDate.toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })} at {notification.appointmentTime}
-          </span>
+          <span>{pending.date} at {pending.startTime}</span>
         </div>
-        <div className="text-sm text-gray-700">
-          <span className="font-medium">Service:</span> {notification.serviceName}
-        </div>
+        <div className="text-sm text-gray-700"><span className="font-medium">Doctor:</span> {pending.doctorName}</div>
+        <div className="text-sm text-gray-700"><span className="font-medium">Services:</span> {pending.services || '—'}</div>
       </div>
+    </div>
+  );
+}
 
-      {isSent && notification.sentAt && (
-        <p className="text-xs text-gray-600">
-          Sent {notification.sentAt.toLocaleDateString()} at{' '}
-          {notification.sentAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      )}
-
-      {!isSent && onSend && (
-        <button
-          onClick={() => onSend(notification)}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-        >
-          <Send className="w-4 h-4" />
-          Send Reminder
-        </button>
+function SentCard({ record }: { record: any }) {
+  const sentAt = record.sentAt ? new Date(record.sentAt) : null;
+  return (
+    <div className="p-4 rounded-lg border-2 border-green-200 bg-green-50">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1">
+          <h3 className="font-medium text-gray-900">{record.patientName ?? '—'}</h3>
+          <p className="text-sm text-gray-600">{record.method} · {record.status}</p>
+        </div>
+        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+      </div>
+      {sentAt && (
+        <p className="text-xs text-gray-600">Sent {sentAt.toLocaleDateString()} at {sentAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
       )}
     </div>
   );

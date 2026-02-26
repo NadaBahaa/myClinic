@@ -74,4 +74,20 @@ export const patientFileService = {
   async deletePrescription(fileUuid: string, rxUuid: string): Promise<void> {
     await apiFetch(`/patient-files/${fileUuid}/prescriptions/${rxUuid}`, { method: 'DELETE' });
   },
+
+  // Attachments (any file type; stored in patient file and DB)
+  async getAttachments(fileUuid: string): Promise<{ id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[]> {
+    const res = await apiFetch<{ data: { id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[] }>(`/patient-files/${fileUuid}/attachments`);
+    return res.data;
+  },
+  async uploadAttachment(fileUuid: string, file: File, name?: string, sessionId?: string): Promise<{ id: string; name: string; path: string; createdAt: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    if (name) form.append('name', name);
+    if (sessionId) form.append('session_id', sessionId);
+    return apiUpload<{ id: string; name: string; path: string; createdAt: string }>(`/patient-files/${fileUuid}/attachments`, form);
+  },
+  async deleteAttachment(fileUuid: string, attachmentUuid: string): Promise<void> {
+    await apiFetch(`/patient-files/${fileUuid}/attachments/${attachmentUuid}`, { method: 'DELETE' });
+  },
 };

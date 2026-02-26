@@ -8,6 +8,7 @@ interface PractitionerTypeContextType {
   updatePractitionerTypes: (types: PractitionerType[]) => void;
   getPractitionerTypeById: (id: string) => PractitionerType | undefined;
   getActivePractitionerTypes: () => PractitionerType[];
+  refetch: () => void;
 }
 
 const PractitionerTypeContext = createContext<PractitionerTypeContextType | null>(null);
@@ -53,6 +54,8 @@ export function PractitionerTypeProvider({ children }: { children: ReactNode }) 
     return practitionerTypes.filter((type) => type.active);
   };
 
+  const refetch = () => loadFromApi();
+
   return (
     <PractitionerTypeContext.Provider
       value={{
@@ -60,6 +63,7 @@ export function PractitionerTypeProvider({ children }: { children: ReactNode }) 
         updatePractitionerTypes,
         getPractitionerTypeById,
         getActivePractitionerTypes,
+        refetch,
       }}
     >
       {children}

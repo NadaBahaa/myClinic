@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Doctor extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'uuid', 'user_id', 'practitioner_type_id', 'name', 'email', 'phone',
         'specialty', 'experience', 'qualifications', 'license_number',

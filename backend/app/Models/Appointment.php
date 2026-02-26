@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Appointment extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'uuid', 'patient_id', 'doctor_id', 'date', 'start_time',
         'end_time', 'duration', 'status', 'notes',

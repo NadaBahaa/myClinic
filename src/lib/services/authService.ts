@@ -34,4 +34,18 @@ export const authService = {
       body: { current_password: currentPassword, password: newPassword, password_confirmation: newPassword },
     });
   },
+
+  async forgotPassword(email: string): Promise<void> {
+    await apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      body: { email },
+    });
+  },
+
+  async resetPassword(email: string, token: string, password: string, passwordConfirmation: string): Promise<void> {
+    await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: { email, token, password, password_confirmation: passwordConfirmation },
+    });
+  },
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Calendar,
   ChevronLeft,
@@ -15,70 +15,87 @@ import DailyCalendar from "./DailyCalendar";
 import MonthlyCalendar from "./MonthlyCalendar";
 import PatientsOfDayView from "./PatientsOfDayView";
 import PatientsView from "./PatientsView";
+import { appointmentService } from "../../lib/services/appointmentService";
+import { toast } from "sonner";
 
-// Mock appointments for the logged-in doctor
-const getDoctorAppointments = (
-  doctorId: string,
-): Appointment[] => {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+function toTimeHHMM(t: string): string {
+  if (!t) return "";
+  const parts = String(t).trim().split(":");
+  return parts.length >= 2 ? `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}` : t;
+}
 
-  return [
-    {
-      id: "1",
-      patientId: "p1",
-      patientName: "Emma Wilson",
-      doctorId,
-      doctorName: "Dr. Sarah Johnson",
-      serviceId: "s1",
-      serviceName: "Facial Treatment",
-      date: today,
-      startTime: "09:00",
-      endTime: "10:00",
-      duration: 60,
-      status: "scheduled",
-      notes: "First visit",
-    },
-    {
-      id: "3",
-      patientId: "p3",
-      patientName: "Sophia Davis",
-      doctorId,
-      doctorName: "Dr. Sarah Johnson",
-      serviceId: "s3",
-      serviceName: "Botox Injection",
-      date: today,
-      startTime: "14:00",
-      endTime: "14:30",
-      duration: 30,
-      status: "scheduled",
-    },
-    {
-      id: "5",
-      patientId: "p4",
-      patientName: "Ava Martinez",
-      doctorId,
-      doctorName: "Dr. Sarah Johnson",
-      serviceId: "s4",
-      serviceName: "Chemical Peel",
-      date: tomorrow,
-      startTime: "10:00",
-      endTime: "10:45",
-      duration: 45,
-      status: "scheduled",
-    },
-  ];
-};
+function toCalendarAppointment(api: {
+  id: string;
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
+  services?: string[];
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  status: string;
+  notes?: string;
+}): Appointment {
+  return {
+    id: api.id,
+    patientId: api.patientId,
+    patientName: api.patientName,
+    doctorId: api.doctorId,
+    doctorName: api.doctorName,
+    serviceId: "",
+    serviceName: (api.services || []).join(", ") || "—",
+    date: new Date(api.date),
+    startTime: toTimeHHMM(api.startTime),
+    endTime: toTimeHHMM(api.endTime),
+    duration: api.duration,
+    status: api.status as Appointment["status"],
+    notes: api.notes,
+  };
+}
 
 export default function DoctorPortal() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"calendar" | "patients-day" | "my-patients">("calendar");
   const [view, setView] = useState<"daily" | "monthly">("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [appointments, setAppointments] = useState<Appointment[]>(
-    user ? getDoctorAppointments(user.id) : []
-  );
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const doctorUuid = user?.doctorId ?? null;
+
+  const fetchAppointments = useCallback(() => {
+    if (!doctorUuid) {
+      setAppointments([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    if (view === "daily") {
+      const dateStr = currentDate.toISOString().split("T")[0];
+      appointmentService
+        .byDate(dateStr)
+        .then((list) => setAppointments(list.map(toCalendarAppointment)))
+        .catch(() => toast.error("Failed to load appointments"))
+        .finally(() => setLoading(false));
+    } else {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const dateFrom = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const dateTo = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      appointmentService
+        .byDateRange(dateFrom, dateTo)
+        .then((list) => setAppointments(list.map(toCalendarAppointment)))
+        .catch(() => toast.error("Failed to load appointments"))
+        .finally(() => setLoading(false));
+    }
+  }, [currentDate, view, doctorUuid]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   if (!user) return null;
 
@@ -238,7 +255,7 @@ export default function DoctorPortal() {
 
         {/* My Patients Tab */}
         {activeTab === "my-patients" && (
-          <PatientsView isDoctorView={true} doctorId={user.id} doctorName={user.name} />
+          <PatientsView isDoctorView={true} doctorId={user.doctorId ?? user.id} doctorName={user.name} />
         )}
 
         {/* Calendar Tab */}

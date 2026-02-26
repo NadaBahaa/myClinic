@@ -8,9 +8,12 @@ export interface Doctor {
   specialty?: string;
   experience?: number;
   bio?: string;
-  availability?: Record<string, string[]>;
+  availability?: Record<string, string[]> | string[];
   practitionerTypeId?: string;
   userId?: string;
+  totalPatients?: number;
+  qualifications?: string;
+  licenseNumber?: string;
 }
 
 export const doctorService = {

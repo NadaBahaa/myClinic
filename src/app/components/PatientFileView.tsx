@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Upload, Image as ImageIcon, FileText, Plus, Trash2, 
   DollarSign, Package, TrendingUp, Calendar, Edit2 
@@ -8,6 +8,27 @@ import {
   SessionMaterialUsage, MaterialOrTool 
 } from '../types';
 import { toast } from 'sonner';
+import { patientFileService } from '../../lib/services/patientFileService';
+import { materialService } from '../../lib/services/materialService';
+
+function parseFileDates(file: PatientFile): PatientFile {
+  return {
+    ...file,
+    createdAt: new Date(file.createdAt),
+    sessions: (file.sessions || []).map((s: SessionRecord) => ({
+      ...s,
+      date: new Date(s.date),
+    })),
+    photos: (file.photos || []).map((p: PatientPhoto) => ({
+      ...p,
+      uploadedAt: new Date(p.uploadedAt),
+    })),
+    prescriptions: (file.prescriptions || []).map((r: Prescription) => ({
+      ...r,
+      prescribedAt: new Date(r.prescribedAt),
+    })),
+  };
+}
 
 interface PatientFileViewProps {
   patientId: string;
@@ -17,39 +38,43 @@ interface PatientFileViewProps {
   onClose: () => void;
 }
 
-// Mock materials/tools
-const mockMaterials: MaterialOrTool[] = [
-  {
-    id: 'mt1',
-    name: 'Hyaluronic Acid Filler',
-    type: 'material',
-    unitPrice: 450,
-    unit: 'ml',
-  },
-  {
-    id: 'mt2',
-    name: 'Botox Injectable',
-    type: 'material',
-    unitPrice: 12,
-    unit: 'unit',
-  },
-  {
-    id: 'mt4',
-    name: 'Chemical Peel Solution',
-    type: 'material',
-    unitPrice: 85,
-    unit: 'ml',
-  },
-];
+function PhotoUploadButtons({ onUpload }: { onUpload: (type: 'before' | 'after' | 'during', file: File, notes?: string) => void }) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const typeRef = React.useRef<'before' | 'after' | 'during'>('before');
+  const handleClick = (type: 'before' | 'after' | 'during') => {
+    typeRef.current = type;
+    inputRef.current?.click();
+  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onUpload(typeRef.current, file);
+    e.target.value = '';
+  };
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+      <button type="button" onClick={() => handleClick('before')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+        <Upload className="w-4 h-4" /> Before
+      </button>
+      <button type="button" onClick={() => handleClick('during')} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+        <Upload className="w-4 h-4" /> During
+      </button>
+      <button type="button" onClick={() => handleClick('after')} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+        <Upload className="w-4 h-4" /> After
+      </button>
+    </>
+  );
+}
 
 interface SessionModalProps {
   session: SessionRecord | null;
   patientName: string;
+  performedBy: string;
   onClose: () => void;
   onSave: (session: SessionRecord) => void;
 }
 
-function SessionModal({ session, patientName, onClose, onSave }: SessionModalProps) {
+function SessionModal({ session, patientName, performedBy, onClose, onSave }: SessionModalProps) {
   const isEditing = !!session;
   const [formData, setFormData] = useState<SessionRecord>(
     session || {
@@ -63,31 +88,49 @@ function SessionModal({ session, patientName, onClose, onSave }: SessionModalPro
       totalMaterialsCost: 0,
       netProfit: 0,
       notes: '',
-      performedBy: '',
+      performedBy: performedBy || '',
     }
   );
 
+  const [materials, setMaterials] = useState<MaterialOrTool[]>([]);
+  const [materialsLoading, setMaterialsLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState('');
   const [materialQuantity, setMaterialQuantity] = useState(1);
+  const [materialUnitPrice, setMaterialUnitPrice] = useState(0);
+
+  useEffect(() => {
+    materialService.getAll()
+      .then((list) => {
+        setMaterials(list);
+        if (list.length > 0 && !selectedMaterial) setMaterialUnitPrice(list[0].unitPrice ?? 0);
+      })
+      .catch(() => toast.error('Failed to load materials/tools'))
+      .finally(() => setMaterialsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const m = materials.find((x) => x.id === selectedMaterial);
+    if (m) setMaterialUnitPrice(m.unitPrice ?? 0);
+  }, [selectedMaterial, materials]);
 
   const handleAddMaterial = () => {
     if (!selectedMaterial) return;
-    
-    const material = mockMaterials.find(m => m.id === selectedMaterial);
+    const material = materials.find((m) => m.id === selectedMaterial);
     if (!material) return;
 
-    const totalPrice = material.unitPrice * materialQuantity;
+    const unitPrice = materialUnitPrice >= 0 ? materialUnitPrice : material.unitPrice ?? 0;
+    const totalPrice = Math.round(unitPrice * materialQuantity * 100) / 100;
     const newMaterial: SessionMaterialUsage = {
       materialId: material.id,
       materialName: material.name,
       quantity: materialQuantity,
-      unitPrice: material.unitPrice,
+      unitPrice,
       totalPrice,
     };
 
     const updatedMaterials = [...formData.materialsUsed, newMaterial];
     const totalMaterialsCost = updatedMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
-    const netProfit = formData.servicePrice - totalMaterialsCost;
+    const netProfit = Math.round((formData.servicePrice - totalMaterialsCost) * 100) / 100;
 
     setFormData({
       ...formData,
@@ -98,6 +141,7 @@ function SessionModal({ session, patientName, onClose, onSave }: SessionModalPro
 
     setSelectedMaterial('');
     setMaterialQuantity(1);
+    if (material) setMaterialUnitPrice(material.unitPrice ?? 0);
   };
 
   const handleRemoveMaterial = (index: number) => {
@@ -191,37 +235,54 @@ function SessionModal({ session, patientName, onClose, onSave }: SessionModalPro
 
           {/* Materials Used */}
           <div>
-            <label className="block mb-2 text-gray-700">Materials & Tools Used</label>
-            <div className="flex gap-2 mb-3">
-              <select
-                value={selectedMaterial}
-                onChange={(e) => setSelectedMaterial(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
-              >
-                <option value="">Select material/tool...</option>
-                {mockMaterials.map((material) => (
-                  <option key={material.id} value={material.id}>
-                    {material.name} - ${material.unitPrice}/{material.unit}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={materialQuantity}
-                onChange={(e) => setMaterialQuantity(parseFloat(e.target.value) || 1)}
-                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
-                placeholder="Qty"
-              />
-              <button
-                type="button"
-                onClick={handleAddMaterial}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
+            <label className="block mb-2 text-gray-700">Materials & Tools Used (change price per session)</label>
+            {materialsLoading ? (
+              <p className="text-sm text-gray-500">Loading materials...</p>
+            ) : (
+              <div className="flex flex-wrap gap-2 mb-3 items-end">
+                <select
+                  value={selectedMaterial}
+                  onChange={(e) => setSelectedMaterial(e.target.value)}
+                  className="flex-1 min-w-[180px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                >
+                  <option value="">Select material/tool...</option>
+                  {materials.map((material) => (
+                    <option key={material.id} value={material.id}>
+                      {material.name} (${(material.unitPrice ?? 0).toFixed(2)}/{material.unit ?? 'unit'})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={materialQuantity}
+                  onChange={(e) => setMaterialQuantity(parseFloat(e.target.value) || 1)}
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                  placeholder="Qty"
+                />
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-600 text-sm">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={materialUnitPrice}
+                    onChange={(e) => setMaterialUnitPrice(parseFloat(e.target.value) || 0)}
+                    className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                    placeholder="Price"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddMaterial}
+                  disabled={!selectedMaterial}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+            )}
 
             {/* Materials List */}
             {formData.materialsUsed.length > 0 && (
@@ -306,21 +367,40 @@ export default function PatientFileView({
   doctorName,
   onClose 
 }: PatientFileViewProps) {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'photos' | 'prescriptions'>('sessions');
-  const [patientFile, setPatientFile] = useState<PatientFile>({
-    id: `pf-${doctorId}-${patientId}`,
-    patientId,
-    patientName,
-    doctorId,
-    doctorName,
-    createdAt: new Date(),
-    sessions: [],
-    photos: [],
-    prescriptions: [],
-  });
+  const [activeTab, setActiveTab] = useState<'sessions' | 'photos' | 'prescriptions' | 'attachments'>('sessions');
+  const [patientFile, setPatientFile] = useState<PatientFile | null>(null);
+  const [attachments, setAttachments] = useState<{ id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [photoSortOrder, setPhotoSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
+
+  useEffect(() => {
+    patientFileService.getFile(patientId, doctorId)
+      .then((file) => setPatientFile(parseFileDates(file as PatientFile)))
+      .catch(() => {
+        toast.error('Failed to load patient file');
+        onClose();
+      })
+      .finally(() => setLoading(false));
+  }, [patientId, doctorId]);
+
+  const fileId = patientFile?.id;
+
+  useEffect(() => {
+    if (fileId && activeTab === 'attachments') {
+      patientFileService.getAttachments(fileId).then(setAttachments).catch(() => setAttachments([]));
+    }
+  }, [fileId, activeTab]);
+
+  const photosSorted = patientFile?.photos
+    ? [...patientFile.photos].sort((a, b) => {
+        const tA = new Date(a.uploadedAt).getTime();
+        const tB = new Date(b.uploadedAt).getTime();
+        return photoSortOrder === 'newest' ? tB - tA : tA - tB;
+      })
+    : [];
 
   const handleAddSession = () => {
     setSelectedSession(null);
@@ -332,56 +412,74 @@ export default function PatientFileView({
     setIsSessionModalOpen(true);
   };
 
-  const handleSaveSession = (session: SessionRecord) => {
-    if (selectedSession) {
-      setPatientFile(prev => ({
-        ...prev,
-        sessions: prev.sessions.map(s => s.id === session.id ? session : s),
-      }));
-      toast.success('Session updated successfully');
-    } else {
-      setPatientFile(prev => ({
-        ...prev,
-        sessions: [...prev.sessions, { ...session, performedBy: doctorName }],
-      }));
-      toast.success('Session added successfully');
-    }
-  };
-
-  const handleDeleteSession = (sessionId: string) => {
-    if (confirm('Are you sure you want to delete this session?')) {
-      setPatientFile(prev => ({
-        ...prev,
-        sessions: prev.sessions.filter(s => s.id !== sessionId),
-      }));
-      toast.success('Session deleted successfully');
-    }
-  };
-
-  const handlePhotoUpload = (type: 'before' | 'after' | 'during') => {
-    // Simulated file upload
-    const newPhoto: PatientPhoto = {
-      id: `photo-${Date.now()}`,
-      url: `https://via.placeholder.com/300x200?text=${type}+Photo`,
-      type,
-      uploadedAt: new Date(),
-      uploadedBy: doctorName,
+  const handleSaveSession = async (session: SessionRecord) => {
+    if (!patientFile || !fileId) return;
+    const payload = {
+      date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
+      serviceName: session.serviceName,
+      servicePrice: session.servicePrice,
+      performedBy: session.performedBy || doctorName,
+      notes: session.notes ?? '',
+      materialsUsed: session.materialsUsed.map((m) => ({ materialId: m.materialId, quantity: m.quantity, unitPrice: m.unitPrice })),
     };
-
-    setPatientFile(prev => ({
-      ...prev,
-      photos: [...prev.photos, newPhoto],
-    }));
-    toast.success('Photo uploaded successfully');
+    try {
+      if (selectedSession) {
+        await patientFileService.updateSession(fileId, selectedSession.id, { notes: payload.notes, date: payload.date, performedBy: payload.performedBy });
+        setPatientFile(prev => prev ? ({ ...prev, sessions: prev.sessions.map(s => s.id === session.id ? { ...session, date: typeof session.date === 'string' ? new Date(session.date) : session.date } : s) }) : null);
+        toast.success('Session updated successfully');
+      } else {
+        const created = await patientFileService.createSession(fileId, payload) as SessionRecord & { date?: string };
+        const newSession: SessionRecord = {
+          ...created,
+          date: created.date ? new Date(created.date) : new Date(),
+        };
+        setPatientFile(prev => prev ? ({ ...prev, sessions: [...prev.sessions, newSession] }) : null);
+        toast.success('Session added successfully');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save session');
+    }
   };
 
-  const handleDeletePhoto = (photoId: string) => {
-    if (confirm('Are you sure you want to delete this photo?')) {
-      setPatientFile(prev => ({
-        ...prev,
-        photos: prev.photos.filter(p => p.id !== photoId),
-      }));
-      toast.success('Photo deleted successfully');
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!fileId || !confirm('Are you sure you want to delete this session?')) return;
+    try {
+      await patientFileService.deleteSession(fileId, sessionId);
+      setPatientFile(prev => prev ? ({ ...prev, sessions: prev.sessions.filter(s => s.id !== sessionId) }) : null);
+      toast.success('Session deleted');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete session');
+    }
+  };
+
+  const handlePhotoUpload = async (type: 'before' | 'after' | 'during', file: File, notes?: string) => {
+    if (!fileId) return;
+    try {
+      const created = await patientFileService.uploadPhoto(fileId, file, type, notes) as PatientPhoto & { uploadedAt?: string };
+      const newPhoto: PatientPhoto = {
+        id: created.id,
+        url: created.url,
+        type: created.type,
+        uploadedAt: created.uploadedAt ? new Date(created.uploadedAt) : new Date(),
+        uploadedBy: created.uploadedBy,
+        sessionId: created.sessionId,
+        notes: created.notes,
+      };
+      setPatientFile(prev => prev ? { ...prev, photos: [...prev.photos, newPhoto] } : null);
+      toast.success('Photo uploaded successfully');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Upload failed');
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!fileId || !confirm('Are you sure you want to delete this photo?')) return;
+    try {
+      await patientFileService.deletePhoto(fileId, photoId);
+      setPatientFile(prev => prev ? { ...prev, photos: prev.photos.filter(p => p.id !== photoId) } : null);
+      toast.success('Photo deleted');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Delete failed');
     }
   };
 
@@ -413,9 +511,17 @@ export default function PatientFileView({
     }
   };
 
-  const totalRevenue = patientFile.sessions.reduce((sum, s) => sum + s.servicePrice, 0);
-  const totalCosts = patientFile.sessions.reduce((sum, s) => sum + s.totalMaterialsCost, 0);
+  const totalRevenue = (patientFile?.sessions ?? []).reduce((sum, s) => sum + s.servicePrice, 0);
+  const totalCosts = (patientFile?.sessions ?? []).reduce((sum, s) => sum + s.totalMaterialsCost, 0);
   const totalProfit = totalRevenue - totalCosts;
+
+  if (loading || !patientFile) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-8 text-gray-600">Loading patient file...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -502,6 +608,17 @@ export default function PatientFileView({
               }`}
             >
               Prescriptions ({patientFile.prescriptions.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('attachments')}
+              className={`px-6 py-3 border-b-2 transition-colors ${
+                activeTab === 'attachments'
+                  ? 'border-pink-600 text-pink-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Upload className="w-4 h-4 inline mr-1" />
+              Attachments ({attachments.length})
             </button>
           </div>
         </div>
@@ -602,43 +719,31 @@ export default function PatientFileView({
           {/* Photos Tab */}
           {activeTab === 'photos' && (
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg text-gray-900">Patient Photos</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handlePhotoUpload('before')}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
+                <h3 className="text-lg text-gray-900">Patient Photos (by date added)</h3>
+                <div className="flex flex-wrap items-center gap-3">
+                  <select
+                    value={photoSortOrder}
+                    onChange={(e) => setPhotoSortOrder(e.target.value as 'newest' | 'oldest')}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <Upload className="w-4 h-4" />
-                    Before
-                  </button>
-                  <button
-                    onClick={() => handlePhotoUpload('during')}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                  >
-                    <Upload className="w-4 h-4" />
-                    During
-                  </button>
-                  <button
-                    onClick={() => handlePhotoUpload('after')}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                  >
-                    <Upload className="w-4 h-4" />
-                    After
-                  </button>
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                  </select>
+                  <PhotoUploadButtons onUpload={handlePhotoUpload} />
                 </div>
               </div>
 
-              {patientFile.photos.length === 0 ? (
+              {photosSorted.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <ImageIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <p>No photos uploaded yet</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {patientFile.photos.map((photo) => (
+                  {photosSorted.map((photo) => (
                     <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <img src={photo.url} alt={photo.type} className="w-full h-48 object-cover" />
+                      <img src={photo.url.startsWith('http') ? photo.url : `${(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/api\/v1\/?$/, '') || window.location.origin}${photo.url}`} alt={photo.type} className="w-full h-48 object-cover" />
                       <div className="p-3">
                         <div className="flex justify-between items-center mb-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -656,7 +761,7 @@ export default function PatientFileView({
                           </button>
                         </div>
                         <p className="text-sm text-gray-600">
-                          {photo.uploadedAt.toLocaleDateString()}
+                          {new Date(photo.uploadedAt).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500">By {photo.uploadedBy}</p>
                       </div>
@@ -712,6 +817,70 @@ export default function PatientFileView({
               )}
             </div>
           )}
+
+          {/* Attachments Tab */}
+          {activeTab === 'attachments' && (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg text-gray-900">Attachments</h3>
+                {fileId && (
+                  <label className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 cursor-pointer">
+                    <Upload className="w-4 h-4" />
+                    Upload file
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0];
+                        if (!f || !fileId) return;
+                        e.target.value = '';
+                        try {
+                          await patientFileService.uploadAttachment(fileId, f, f.name);
+                          const list = await patientFileService.getAttachments(fileId);
+                          setAttachments(list);
+                          toast.success('File uploaded');
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : 'Upload failed');
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              {attachments.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p>No attachments yet. Upload any file (PDF, images, etc.) for this patient.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {attachments.map((a) => (
+                    <div key={a.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+                      <a href={a.path.startsWith('http') ? a.path : `${(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/api\/v1.*$/, '')}${a.path}`} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
+                        {a.name}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!fileId || !confirm('Delete this attachment?')) return;
+                          try {
+                            await patientFileService.deleteAttachment(fileId, a.id);
+                            setAttachments(prev => prev.filter(x => x.id !== a.id));
+                            toast.success('Deleted');
+                          } catch {
+                            toast.error('Delete failed');
+                          }
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -719,6 +888,7 @@ export default function PatientFileView({
         <SessionModal
           session={selectedSession}
           patientName={patientName}
+          performedBy={doctorName}
           onClose={() => setIsSessionModalOpen(false)}
           onSave={handleSaveSession}
         />

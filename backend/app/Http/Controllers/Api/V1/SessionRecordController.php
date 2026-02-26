@@ -111,6 +111,16 @@ class SessionRecordController extends Controller
         if ($request->has('notes'))        $data['notes']        = $request->notes;
         if ($request->has('performedBy'))  $data['performed_by'] = $request->performedBy;
         if ($request->has('date'))         $data['date']         = $request->date;
+        // Accountant/admin may correct financial fields
+        $user = $request->user();
+        if ($user && in_array($user->role, ['admin', 'accountant'], true)) {
+            if ($request->has('servicePrice'))       $data['service_price']        = (float) $request->servicePrice;
+            if ($request->has('totalMaterialsCost')) $data['total_materials_cost'] = (float) $request->totalMaterialsCost;
+            if ($request->has('netProfit'))          $data['net_profit']           = (float) $request->netProfit;
+            if (isset($data['service_price']) || isset($data['total_materials_cost'])) {
+                $data['net_profit'] = ($data['service_price'] ?? $session->service_price) - ($data['total_materials_cost'] ?? $session->total_materials_cost);
+            }
+        }
 
         $session->update($data);
         $session->load(['materialUsages.material', 'appointment', 'service']);

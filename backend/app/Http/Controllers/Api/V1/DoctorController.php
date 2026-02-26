@@ -16,7 +16,21 @@ class DoctorController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $doctors = Doctor::with(['practitionerType', 'user'])->get();
+        $query = Doctor::with(['practitionerType', 'user']);
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('specialty', 'like', "%{$search}%");
+            });
+        }
+        if ($type = $request->query('practitioner_type')) {
+            $query->whereHas('practitionerType', fn($q) => $q->where('uuid', $type));
+        }
+
+        $doctors = $query->get();
 
         return response()->json(DoctorResource::collection($doctors));
     }

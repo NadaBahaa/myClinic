@@ -8,8 +8,11 @@ use App\Http\Resources\NotificationRecordResource;
 use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Patient;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class NotificationRecordController extends Controller
 {
@@ -47,25 +50,123 @@ class NotificationRecordController extends Controller
 
     /**
      * GET /api/v1/notifications/pending
-     * Appointments tomorrow that haven't received a reminder yet.
+     * Appointments 1 to N days ahead (N = reminder_days_before) that haven't received a reminder yet.
      */
     public function pending(): JsonResponse
     {
-        $tomorrow = now()->addDay()->toDateString();
+        $days = (int) Setting::get('reminder_days_before', 1);
+        $days = $days < 1 ? 1 : ($days > 14 ? 14 : $days);
+
+        $dateFrom = now()->addDay()->toDateString();
+        $dateTo   = now()->addDays($days)->toDateString();
 
         $appointments = Appointment::with(['patient', 'doctor', 'services'])
-            ->whereDate('date', $tomorrow)
+            ->whereBetween('date', [$dateFrom, $dateTo])
             ->where('status', 'scheduled')
-            ->whereDoesntHave('notifications', fn($q) => $q->where('type', 'reminder'))
+            ->whereDoesntHave('notifications', fn ($q) => $q->where('type', 'reminder'))
+            ->orderBy('date')
+            ->orderBy('start_time')
             ->get();
 
-        return response()->json($appointments->map(fn($a) => [
-            'id'          => $a->uuid,
-            'patientName' => $a->patient->name,
-            'patientEmail'=> $a->patient->email,
-            'doctorName'  => $a->doctor->name,
-            'date'        => $a->date->toDateString(),
-            'startTime'   => $a->start_time,
+        return response()->json($appointments->map(fn ($a) => [
+            'id'           => $a->uuid,
+            'patientName'  => $a->patient->name,
+            'patientEmail' => $a->patient->email ?? '',
+            'patientPhone' => $a->patient->phone ?? '',
+            'doctorName'   => $a->doctor->name,
+            'date'         => $a->date->toDateString(),
+            'startTime'    => $a->start_time,
+            'services'     => $a->services->pluck('name')->implode(', '),
+            'notes'        => $a->notes,
         ]));
+    }
+
+    /**
+     * POST /api/v1/notifications/send-reminders
+     * Send reminder (email; SMS/WhatsApp logged) for pending appointments. Optional body: { "appointmentIds": ["uuid", ...] } or all pending.
+     */
+    public function sendReminders(Request $request): JsonResponse
+    {
+        $days = (int) Setting::get('reminder_days_before', 1);
+        $days = $days < 1 ? 1 : ($days > 14 ? 14 : $days);
+        $dateFrom = now()->addDay()->toDateString();
+        $dateTo   = now()->addDays($days)->toDateString();
+
+        $query = Appointment::with(['patient', 'doctor', 'services'])
+            ->whereBetween('date', [$dateFrom, $dateTo])
+            ->where('status', 'scheduled')
+            ->whereDoesntHave('notifications', fn ($q) => $q->where('type', 'reminder'));
+
+        if ($request->has('appointmentIds') && is_array($request->appointmentIds)) {
+            $query->whereIn('uuid', $request->appointmentIds);
+        }
+
+        $appointments = $query->get();
+        $sent = 0;
+        $failed = 0;
+        $senderName = $request->user()?->name ?? 'System';
+
+        foreach ($appointments as $appointment) {
+            $patient = $appointment->patient;
+            $doctor  = $appointment->doctor;
+            $servicesText = $appointment->services->pluck('name')->implode(', ');
+            $body = "Appointment reminder\n\n"
+                . "Patient: {$patient->name}\n"
+                . "Date: {$appointment->date->toDateString()} at {$appointment->start_time}\n"
+                . "Doctor: {$doctor->name}\n"
+                . "Services: {$servicesText}\n"
+                . ($appointment->notes ? "Notes: {$appointment->notes}\n" : '')
+                . "\nPlease confirm or reschedule if needed.";
+
+            $methods = ['email'];
+            if ($request->boolean('alsoSms') && ! empty($patient->phone)) {
+                $methods[] = 'sms';
+            }
+            if ($request->boolean('alsoWhatsApp') && ! empty($patient->phone)) {
+                $methods[] = 'whatsapp';
+            }
+
+            foreach ($methods as $method) {
+                $status = 'sent';
+                try {
+                    if ($method === 'email' && ! empty($patient->email)) {
+                        Mail::raw($body, function ($message) use ($patient, $appointment) {
+                            $message->to($patient->email)
+                                ->subject('Appointment reminder: ' . $appointment->date->toDateString() . ' at ' . $appointment->start_time);
+                        });
+                    } elseif (($method === 'sms' || $method === 'whatsapp') && ! empty($patient->phone)) {
+                        Log::info('Reminder (configure SMS/WhatsApp driver): ' . $method, [
+                            'patient_id' => $patient->id,
+                            'phone'      => $patient->phone,
+                            'body'       => $body,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    $status = 'failed';
+                    Log::warning('Reminder send failed', ['method' => $method, 'patient' => $patient->id, 'error' => $e->getMessage()]);
+                }
+                if ($status === 'sent') {
+                    $sent++;
+                } else {
+                    $failed++;
+                }
+                NotificationRecord::create([
+                    'patient_id'     => $patient->id,
+                    'appointment_id' => $appointment->id,
+                    'type'           => 'reminder',
+                    'sent_at'        => now(),
+                    'sent_by'        => $senderName,
+                    'method'         => $method,
+                    'status'         => $status,
+                ]);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Reminders processed',
+            'sent'    => $sent,
+            'failed'  => $failed,
+            'total'   => $appointments->count(),
+        ]);
     }
 }

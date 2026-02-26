@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Plus, Search, Phone, Mail, Calendar, FolderOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Phone, Mail, Calendar, FolderOpen, X } from 'lucide-react';
 import PatientDetailModal, { Patient } from './PatientDetailModal';
 import PatientFileView from './PatientFileView';
+import { doctorService } from '../../lib/services/doctorService';
 
 const initialPatients: Patient[] = [
   {
@@ -57,7 +58,16 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPatientFile, setSelectedPatientFile] = useState<{ patientId: string; patientName: string } | null>(null);
+  const [selectedPatientFile, setSelectedPatientFile] = useState<{ patientId: string; patientName: string; doctorId: string; doctorName: string } | null>(null);
+  const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
+  const [showDoctorPicker, setShowDoctorPicker] = useState(false);
+  const [patientForFile, setPatientForFile] = useState<Patient | null>(null);
+
+  useEffect(() => {
+    if (!isDoctorView) {
+      doctorService.getAll().then((list) => setDoctors(list.map((d) => ({ id: d.id, name: d.name })))).catch(() => {});
+    }
+  }, [isDoctorView]);
 
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,11 +101,23 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
 
   const handleOpenPatientFile = (patient: Patient) => {
     if (isDoctorView && doctorId && doctorName) {
-      setSelectedPatientFile({
-        patientId: patient.id,
-        patientName: patient.name,
-      });
+      setSelectedPatientFile({ patientId: patient.id, patientName: patient.name, doctorId, doctorName });
+    } else {
+      setPatientForFile(patient);
+      setShowDoctorPicker(true);
     }
+  };
+
+  const handlePickDoctorForFile = (dId: string, dName: string) => {
+    if (!patientForFile) return;
+    setSelectedPatientFile({
+      patientId: patientForFile.id,
+      patientName: patientForFile.name,
+      doctorId: dId,
+      doctorName: dName,
+    });
+    setShowDoctorPicker(false);
+    setPatientForFile(null);
   };
 
   return (
@@ -174,15 +196,13 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
               </div>
             )}
 
-            {isDoctorView && (
-              <button
-                onClick={() => handleOpenPatientFile(patient)}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FolderOpen className="w-4 h-4" />
-                Open Patient File
-              </button>
-            )}
+            <button
+              onClick={() => handleOpenPatientFile(patient)}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FolderOpen className="w-4 h-4" />
+              Open Patient File
+            </button>
           </div>
         ))}
       </div>
@@ -203,13 +223,33 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
         />
       )}
 
+      {/* Doctor picker for admin/assistant */}
+      {showDoctorPicker && patientForFile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg text-gray-900">Select doctor for {patientForFile.name}&apos;s file</h3>
+              <button onClick={() => { setShowDoctorPicker(false); setPatientForFile(null); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-2">
+              {doctors.map((d) => (
+                <button key={d.id} onClick={() => handlePickDoctorForFile(d.id, d.name)} className="w-full px-4 py-3 border border-gray-200 rounded-lg hover:bg-pink-50 text-left">
+                  {d.name}
+                </button>
+              ))}
+            </div>
+            {doctors.length === 0 && <p className="text-gray-500 text-sm">No doctors found.</p>}
+          </div>
+        </div>
+      )}
+
       {/* Patient File View */}
-      {selectedPatientFile && doctorId && doctorName && (
+      {selectedPatientFile && (
         <PatientFileView
           patientId={selectedPatientFile.patientId}
           patientName={selectedPatientFile.patientName}
-          doctorId={doctorId}
-          doctorName={doctorName}
+          doctorId={selectedPatientFile.doctorId}
+          doctorName={selectedPatientFile.doctorName}
           onClose={() => setSelectedPatientFile(null)}
         />
       )}

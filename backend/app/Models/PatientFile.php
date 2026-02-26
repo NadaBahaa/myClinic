@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class PatientFile extends Model
 {
+    use SoftDeletes;
     protected $fillable = ['uuid', 'patient_id', 'doctor_id'];
 
     protected static function boot(): void
@@ -38,6 +40,11 @@ class PatientFile extends Model
     public function prescriptions()
     {
         return $this->hasMany(Prescription::class);
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(PatientFileAttachment::class);
     }
 
     /**

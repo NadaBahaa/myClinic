@@ -15,7 +15,7 @@ class UserController extends Controller
 {
     public function index(): JsonResponse
     {
-        $users = User::with('practitionerType')->get();
+        $users = User::with(['practitionerType', 'doctor'])->get();
 
         return response()->json(UserResource::collection($users));
     }
@@ -66,6 +66,7 @@ class UserController extends Controller
         if ($request->has('email'))    $data['email']     = $request->email;
         if ($request->has('password')) $data['password']  = $request->password;
         if ($request->has('role'))     $data['role']      = $request->role;
+        if ($request->has('isActive')) $data['is_active'] = $request->boolean('isActive');
 
         if ($request->has('practitionerTypeId')) {
             $pt = PractitionerType::where('uuid', $request->practitionerTypeId)->first();
@@ -95,6 +96,10 @@ class UserController extends Controller
         // Prevent self-deletion
         if ($user->id === request()->user()->id) {
             return response()->json(['message' => 'Cannot delete your own account'], 422);
+        }
+        // Prevent deleting another super admin (superadmin only can do that if we allow)
+        if ($user->role === 'superadmin' && request()->user()->role !== 'superadmin') {
+            return response()->json(['message' => 'Cannot delete a super admin'], 422);
         }
 
         $user->tokens()->delete();

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class MaterialOrTool extends Model
 {
+    use SoftDeletes;
     protected $table = 'materials_tools';
 
     protected $fillable = [

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class PractitionerType extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'uuid', 'name', 'description', 'category', 'color', 'icon', 'active',
         // permissions

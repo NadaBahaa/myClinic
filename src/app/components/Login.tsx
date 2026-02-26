@@ -4,9 +4,10 @@ import { useAuth } from '../App';
 
 interface LoginProps {
   onBack: () => void;
+  onForgotPassword?: () => void;
 }
 
-export default function Login({ onBack }: LoginProps) {
+export default function Login({ onBack, onForgotPassword }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -74,6 +75,7 @@ export default function Login({ onBack }: LoginProps) {
               <input
                 id="password"
                 type="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
@@ -96,6 +98,13 @@ export default function Login({ onBack }: LoginProps) {
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
+            {onForgotPassword && (
+              <p className="text-center text-sm text-gray-600">
+                <button type="button" onClick={onForgotPassword} className="text-pink-600 hover:text-pink-700 font-medium">
+                  Forgot password?
+                </button>
+              </p>
+            )}
           </form>
 
           <div className="mt-8 pt-6 border-t border-gray-200">

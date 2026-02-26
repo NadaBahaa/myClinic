@@ -155,8 +155,9 @@ export default function DailyCalendar({
     <div className="h-full overflow-auto">
       <div className="min-w-[300px]">
         {timeSlots.map((time) => {
+          const slotHour = time.slice(0, 2);
           const slotAppointments = dailyAppointments.filter(
-            (apt) => apt.startTime === time
+            (apt) => apt.startTime === time || apt.startTime.startsWith(slotHour + ':')
           );
           return (
             <TimeSlot

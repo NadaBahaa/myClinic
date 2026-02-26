@@ -1,280 +1,107 @@
-# Practitioner Types System - Implementation Summary
+# Beauty Clinic – Implementation Summary
 
-## 🎉 What Was Implemented
-
-A comprehensive, dynamic practitioner type management system for the beauty clinic management platform that allows administrators to configure multiple types of healthcare practitioners with granular control over permissions, features, and capabilities.
-
-## 📦 New Components Created
-
-### 1. **PractitionerTypeDetailModal.tsx**
-Complete modal for creating and editing practitioner types with:
-- Basic information (name, description, category, color)
-- 8 configurable permissions
-- 12 specialized features
-- Scheduling rules (duration, buffers, max appointments)
-- Required certifications management
-- Service category assignment
-- Active/inactive status toggle
-
-### 2. **PractitionerTypesView.tsx**
-Management view for all practitioner types featuring:
-- Grid display with color-coded cards
-- Search functionality
-- Category filtering (Medical, Aesthetic, Wellness, Dental, Therapeutic, Other)
-- Visual indicators for permissions, features, and scheduling
-- Active practitioner count per type
-- Full CRUD operations
-
-### 3. **PractitionerTypeContext.tsx**
-React context provider that:
-- Manages global practitioner types state
-- Provides helper functions (getPractitionerTypeById, getActivePractitionerTypes)
-- Comes with 7 pre-configured practitioner types
-- Enables sharing practitioner data across components
-
-## 🔄 Modified Components
-
-### 1. **DoctorDetailModal.tsx**
-Enhanced to:
-- Include practitioner type selector dropdown
-- Display type-specific requirements and features
-- Show required certifications
-- Display default scheduling rules
-- Show allowed service categories
-- Validate against practitioner type requirements
-
-### 2. **DoctorsView.tsx**
-Updated to:
-- Display practitioner type badge with custom color
-- Link doctors to their practitioner types
-- Show type information on doctor cards
-- Initialize doctors with practitioner type IDs
-
-### 3. **ServiceDetailModal.tsx**
-Modified to:
-- Allow linking services to specific practitioner types
-- Display which types can perform each service
-- Extended category list to match practitioner capabilities
-- Multi-select practitioner type assignment
-
-### 4. **AdminDashboard.tsx**
-Added:
-- New "Practitioner Types" tab (admin-only)
-- Route to PractitionerTypesView
-- Briefcase icon for the tab
-
-### 5. **App.tsx**
-Wrapped with:
-- PractitionerTypeProvider context
-- Global practitioner types access
-
-## 🎨 Pre-configured Practitioner Types
-
-The system includes 7 ready-to-use practitioner types:
-
-| Type | Category | Color | Default Duration | Key Features |
-|------|----------|-------|------------------|--------------|
-| **Dermatologist** | Medical | Blue | 45 min | Skin analysis, prescriptions, before/after photos |
-| **Laser Specialist** | Aesthetic | Orange | 60 min | Laser settings, requires assistant, consent forms |
-| **Nutritionist** | Wellness | Green | 60 min | Meal plans, progress tracking, product recommendations |
-| **Dentist** | Dental | Teal | 60 min | Dental chart, x-rays, insurance billing |
-| **Cosmetic Surgeon** | Medical | Purple | 120 min | Surgery capable, x-rays, extensive documentation |
-| **Physical Therapist** | Therapeutic | Red | 60 min | Exercise plans, progress tracking, insurance |
-| **Esthetician** | Aesthetic | Pink | 60 min | Skin analysis, product recommendations |
-
-## 🔧 Configurable Options
-
-### Permissions (8 options)
-- Can Prescribe
-- Can Perform Surgery
-- Requires Assistant
-- Can Access Medical Records
-- Can Create Treatment Plans
-- Can Manage Inventory
-- Can View All Patients
-- Can Export Data
-
-### Features (12 options)
-- Before/After Photos
-- Dental Chart
-- Skin Analysis
-- Meal Plans
-- Exercise Plans
-- Laser Settings
-- X-ray Management
-- Consent Forms
-- Progress Tracking
-- Prescription Management
-- Insurance Billing
-- Product Recommendations
-
-### Scheduling Rules
-- Default Appointment Duration (customizable minutes)
-- Buffer Time Before (customizable minutes)
-- Buffer Time After (customizable minutes)
-- Max Appointments Per Day (customizable number)
-- Allow Double Booking (toggle)
-- Requires Initial Consultation (toggle)
-
-### Service Categories (14 options)
-Skincare, Hair Removal, Injectable, Surgical, Nutrition, Dental, Physical Therapy, Laser Treatment, Body Contouring, Wellness, Diagnostic, Consultation, Massage, Body Treatment, Other
-
-## 📊 Database Schema (Frontend State)
-
-```typescript
-interface PractitionerType {
-  id: string;
-  name: string;
-  description: string;
-  category: 'Medical' | 'Aesthetic' | 'Wellness' | 'Dental' | 'Therapeutic' | 'Other';
-  color: string; // Hex color code
-  icon: string;
-  permissions: PractitionerTypePermissions;
-  features: PractitionerTypeFeatures;
-  schedulingRules: SchedulingRules;
-  requiredCertifications: string[];
-  allowedServiceCategories: string[];
-  active: boolean;
-}
-
-interface Doctor {
-  // ... existing fields
-  practitionerTypeId?: string; // Link to practitioner type
-  customPermissions?: Record<string, boolean>; // Future: override type permissions
-}
-
-interface Service {
-  // ... existing fields
-  allowedPractitionerTypeIds?: string[]; // Which types can perform this service
-}
-```
-
-## 🎯 User Workflows
-
-### Admin Creating a New Practitioner Type
-1. Navigate to Practitioner Types tab
-2. Click "Add Practitioner Type"
-3. Enter basic info (name, description, category)
-4. Select color theme
-5. Configure permissions
-6. Enable specialized features
-7. Set scheduling rules
-8. Add required certifications
-9. Select allowed service categories
-10. Activate the type
-11. Save
-
-### Admin Assigning a Doctor to a Type
-1. Go to Doctors tab
-2. Add/Edit a doctor
-3. Select Practitioner Type from dropdown
-4. System displays:
-   - Required certifications
-   - Default scheduling
-   - Allowed services
-5. Complete doctor information
-6. Save
-
-### Admin Linking Services to Types
-1. Go to Services tab
-2. Add/Edit a service
-3. Select which practitioner types can perform it
-4. Save
-
-## 🚀 Benefits
-
-### For Administrators
-- ✅ Dynamic configuration without code changes
-- ✅ Standardized practitioner capabilities
-- ✅ Easy scaling as clinic adds new specialties
-- ✅ Visual organization with color coding
-- ✅ Centralized permission management
-
-### For the System
-- ✅ Type-safe TypeScript implementation
-- ✅ Reusable context pattern
-- ✅ Modular component architecture
-- ✅ Scalable data structure
-- ✅ Easy to extend with new features
-
-### For Users
-- ✅ Clear practitioner qualifications
-- ✅ Appropriate service matching
-- ✅ Professional presentation
-- ✅ Trust through transparency
-
-## 🔮 Future Enhancements Ready
-
-The architecture supports:
-- Individual permission overrides per doctor
-- Type-specific analytics and reporting
-- Automated certification tracking
-- Variable pricing by practitioner type
-- Multi-type practitioners
-- Custom forms per type
-- Type-specific templates
-
-## 📱 Responsive Design
-
-All new components are fully responsive:
-- Mobile-friendly forms
-- Touch-optimized controls
-- Adaptive grid layouts
-- Scrollable content areas
-
-## 🎨 UI/UX Features
-
-- Color-coded type identification
-- Visual permission indicators
-- Collapsible sections
-- Inline help text
-- Preview cards
-- Real-time validation
-- Toast notifications
-- Confirmation dialogs
-
-## 🔐 Security Considerations
-
-- Admin-only access to Practitioner Types
-- Permission inheritance from types
-- Type deactivation instead of deletion (preserves data integrity)
-- Validation of required fields
-- Type-safe TypeScript throughout
-
-## 📚 Documentation Created
-
-1. **PRACTITIONER_TYPES_GUIDE.md** - User guide with examples
-2. **IMPLEMENTATION_SUMMARY.md** - Technical implementation details
-3. Inline code comments
-4. JSDoc type definitions
-
-## ✅ Testing Checklist
-
-- [x] Create new practitioner type
-- [x] Edit existing practitioner type
-- [x] Delete practitioner type
-- [x] Deactivate/activate type
-- [x] Assign type to doctor
-- [x] Display type on doctor card
-- [x] Link service to types
-- [x] Search and filter types
-- [x] Responsive design on mobile
-- [x] Type badge colors display correctly
-- [x] Context provides correct data
-- [x] All modals open/close properly
-
-## 🎓 Code Quality
-
-- TypeScript for type safety
-- React hooks for state management
-- Context API for global state
-- Modular component design
-- Consistent naming conventions
-- Comprehensive error handling
-- User-friendly toast messages
+This document summarizes the changes made to meet the requested features and what remains to be completed or configured.
 
 ---
 
-**Implementation Complete!** ✨
+## ✅ Implemented
 
-The system is now fully equipped to handle multiple practitioner types dynamically, providing a scalable foundation for clinics with diverse healthcare providers.
+### 1. Dynamic calendar (daily & monthly)
+- **Backend:** `AppointmentController` index supports `date_from` and `date_to`; `byDate(date)` and `byDoctor(uuid)` unchanged.
+- **Frontend:** `CalendarView` and `DoctorPortal` now fetch appointments when the date or view changes (daily: by date, monthly: by date range). Data is refetched after create/update/delete so the calendar always shows current data.
+
+### 2. Soft delete
+- **Migration:** `2024_01_01_000017_add_soft_deletes_to_tables.php` adds `deleted_at` to: `patients`, `doctors`, `appointments`, `materials_tools`, `services`, `session_records`, `patient_files`, `practitioner_types`.
+- **Models:** All listed models use `SoftDeletes`. Deleted records are excluded from normal queries; `destroy()` sets `deleted_at` instead of hard delete. Appointments are also set to `cancelled` before soft delete.
+
+### 3. Admin backlog (activity log)
+- **Backend:** `activity_log` table and `ActivityLog` model; `ActivityLog::log()` for create/update/delete. `ActivityLogController::index()` with filters: `subject_type`, `action`, `user_id`, `date_from`, `date_to`. Logging added for patients and appointments (can be extended to other entities).
+- **Frontend:** “Activity Log” tab in Admin dashboard with filters and expandable row details.
+
+### 4. Accountant dashboard
+- **Backend:** New role `accountant` (migration `2024_01_01_000019_add_accountant_role_to_users.php`). `ReportsController::sessions()` and `exportSessions()` (CSV) under `role:admin,accountant`. Session update allows `servicePrice`, `totalMaterialsCost`, `netProfit` for admin/accountant.
+- **Frontend:** `AccountantDashboard` with sales summary, session list, date/search filters, edit-session modal, and Export CSV. Admin has a “Sales & Export” tab that reuses the same report (embedded).
+
+### 5. Filters and search
+- **Backend:**  
+  - Patients: existing `?search=` on name, email, phone.  
+  - Doctors: `?search=` on name, email, phone, specialty; `?practitioner_type=uuid`.  
+  - Services: `?search=` on name, category, description; existing `?category`, `?popular`.  
+  - Materials/tools: `?search=` on name, supplier, notes; existing `?type`.  
+  - Reports: `?date_from`, `?date_to`, `?search=` on service/performer/patient.
+- **Frontend:** Activity log and accountant report UIs use these filters; other list views can pass query params to the same endpoints.
+
+### 6. Export (CSV) for sales
+- **Backend:** `GET /reports/sessions/export?date_from=&date_to=` returns CSV (admin/accountant).
+- **Frontend:** “Export CSV” in Accountant dashboard and in Admin “Sales & Export” tab; uses auth and triggers download.
+
+### 7. Doctor data isolation
+- **Backend:**  
+  - `UserResource` and `/auth/me` include `doctorId` when user has a linked doctor.  
+  - Appointments: `index`, `byDate`, `byDoctor` restricted to current doctor when `role === 'doctor'`.  
+  - Patients: `index` limited to patients with a patient file for the current doctor; `show` returns 403 if the patient has no file with that doctor.  
+  - Patient files: `index` returns only the current doctor’s file(s); `show(patientUuid, doctorUuid)` returns 403 if `doctorUuid` is not the current doctor.
+- **Frontend:** DoctorPortal uses `appointmentService.byDate` / `byDateRange` (backend already scoped); `PatientsView` in doctor context receives `user.doctorId`.
+
+---
+
+## 🔶 Partially done / to extend
+
+### 8. Material and tools – vendor/type pricing
+- **Current:** Single `unit_price` and `type` (material|tool) on `materials_tools`.
+- **To do:** Add vendor and type-based pricing, e.g.:
+  - Option A: New table `material_prices` (material_id, vendor, type_or_category, unit_price, effective_from).
+  - Option B: Add columns `vendor`, `price_type` and a JSON or separate table for multiple prices per item.
+- Then use the chosen price in session material usage and in UI.
+
+### 9. SMS / WhatsApp / email notifications
+- **Current:** `notification_records` and endpoints for pending reminders and creating records; no actual sending.
+- **To do:**  
+  - Add a settings table or config for “reminder X days before” (e.g. `reminder_days_before` default 1).  
+  - Implement sending (e.g. Laravel Mail, Twilio for SMS, WhatsApp Business API) when creating reminder records or via a scheduled job.  
+  - Use appointment and patient data in the message body.
+
+### 10. Material/tools assigned to multiple doctors
+- **Current:** No assignment; all authenticated users can read materials.
+- **To do:**  
+  - Pivot table `doctor_material` (doctor_id, material_id) or `material_assignments`.  
+  - Admin UI to assign materials to doctors.  
+  - When role is doctor, filter materials (and session material usage) to assigned items only.
+
+### 11. Doctor attachments per patient ✅
+- **Done:** Table `patient_file_attachments`, model `PatientFileAttachment`, `PatientFileAttachmentController` (index/store/destroy). Routes under `patient-files/{fileUuid}/attachments`. Doctor can upload any file; stored in `storage/app/public/patient-file-attachments/` and path in DB. Patient file view has an “Attachments” tab: list, upload, delete. Access scoped so doctors only see their own patient files.
+
+---
+
+## 🔧 How to run migrations
+
+```bash
+cd backend
+php artisan migrate
+```
+
+New migrations:
+- `2024_01_01_000017_add_soft_deletes_to_tables`
+- `2024_01_01_000018_create_activity_log_table`
+- `2024_01_01_000019_add_accountant_role_to_users`
+- `2024_01_01_000020_create_settings_table` (includes default `reminder_days_before = 1`)
+- `2024_01_01_000021_create_material_prices_table` (vendor/type-based pricing; wire in services when needed)
+- `2024_01_01_000022_create_doctor_material_table` (pivot for assigning materials to doctors; wire in when needed)
+- `2024_01_01_000023_create_patient_file_attachments_table`
+
+---
+
+## 👤 Creating an accountant user
+
+- In Admin → Users, create a user and set **Role** to **Accountant**.  
+- Or in DB: `UPDATE users SET role = 'accountant' WHERE email = '...';`  
+- Accountant can log in and see only the accountant dashboard (sales report + export).
+
+---
+
+## Optional next steps (from “professional features” research)
+
+- **Compliance:** Keep activity log for audit; consider retention policy.  
+- **Security:** Ensure HTTPS; avoid logging sensitive fields in `old_values`/`new_values` (e.g. mask password).  
+- **Performance:** Index `activity_log(created_at)`, `session_records(date)`; paginate large exports.  
+- **UX:** Bulk actions, clearer empty states, and keyboard shortcuts where useful.

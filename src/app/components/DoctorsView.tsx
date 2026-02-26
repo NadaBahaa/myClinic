@@ -1,43 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Mail, Phone, Briefcase } from 'lucide-react';
+import { toast } from 'sonner';
 import DoctorDetailModal, { Doctor } from './DoctorDetailModal';
 import { usePractitionerTypes } from '../contexts/PractitionerTypeContext';
+import { doctorService } from '../../lib/services/doctorService';
 
-const initialDoctors: Doctor[] = [
-  {
-    id: '2',
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah@clinic.com',
-    phone: '(555) 111-2222',
-    specialty: 'Dermatology',
-    practitionerTypeId: 'pt1',
-    experience: 12,
-    availability: ['Monday', 'Tuesday', 'Wednesday', 'Friday'],
-    totalPatients: 156,
-    qualifications: 'MD from Harvard Medical School, Board Certified Dermatologist',
-    licenseNumber: 'MD123456'
-  },
-  {
-    id: '3',
-    name: 'Dr. Michael Chen',
-    email: 'michael@clinic.com',
-    phone: '(555) 333-4444',
-    specialty: 'Cosmetic Surgery',
-    practitionerTypeId: 'pt5',
-    experience: 15,
-    availability: ['Tuesday', 'Wednesday', 'Thursday', 'Saturday'],
-    totalPatients: 203,
-    qualifications: 'MD from Johns Hopkins, Fellowship in Cosmetic Surgery',
-    licenseNumber: 'MD789012'
-  },
-];
+function toDoctor(d: Awaited<ReturnType<typeof doctorService.get>>): Doctor {
+  return {
+    id: d.id,
+    name: d.name,
+    email: d.email,
+    phone: d.phone ?? '',
+    specialty: d.specialty ?? '',
+    practitionerTypeId: d.practitionerTypeId,
+    experience: d.experience ?? 0,
+    availability: Array.isArray(d.availability) ? d.availability as string[] : [],
+    totalPatients: d.totalPatients ?? 0,
+    qualifications: d.qualifications,
+    licenseNumber: d.licenseNumber,
+  };
+}
 
 export default function DoctorsView() {
-  const [doctors, setDoctors] = useState<Doctor[]>(initialDoctors);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { getPractitionerTypeById } = usePractitionerTypes();
+
+  useEffect(() => {
+    doctorService.getAll()
+      .then((list) => setDoctors(list.map(toDoctor)))
+      .catch(() => toast.error('Failed to load doctors'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredDoctors = doctors.filter((doctor) =>
     doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,18 +52,52 @@ export default function DoctorsView() {
     setIsModalOpen(true);
   };
 
-  const handleSaveDoctor = (doctor: Doctor) => {
-    if (selectedDoctor) {
-      // Update existing doctor
-      setDoctors(prev => prev.map(d => d.id === doctor.id ? doctor : d));
-    } else {
-      // Add new doctor
-      setDoctors(prev => [...prev, doctor]);
+  const handleSaveDoctor = async (doctor: Doctor) => {
+    try {
+      if (selectedDoctor) {
+        await doctorService.update(doctor.id, {
+          name: doctor.name,
+          email: doctor.email,
+          phone: doctor.phone,
+          specialty: doctor.specialty,
+          practitionerTypeId: doctor.practitionerTypeId,
+          experience: doctor.experience,
+          availability: doctor.availability,
+          qualifications: doctor.qualifications,
+          licenseNumber: doctor.licenseNumber,
+        });
+        setDoctors(prev => prev.map(d => d.id === doctor.id ? doctor : d));
+        toast.success('Doctor updated successfully');
+      } else {
+        const created = await doctorService.create({
+          name: doctor.name,
+          email: doctor.email,
+          phone: doctor.phone,
+          specialty: doctor.specialty,
+          practitionerTypeId: doctor.practitionerTypeId,
+          experience: doctor.experience,
+          availability: doctor.availability,
+          qualifications: doctor.qualifications,
+          licenseNumber: doctor.licenseNumber,
+        });
+        setDoctors(prev => [...prev, toDoctor(created as Awaited<ReturnType<typeof doctorService.get>>)]);
+        toast.success('Doctor added successfully');
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to save doctor');
     }
   };
 
-  const handleDeleteDoctor = (id: string) => {
-    setDoctors(prev => prev.filter(d => d.id !== id));
+  const handleDeleteDoctor = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this doctor?')) return;
+    try {
+      await doctorService.remove(id);
+      setDoctors(prev => prev.filter(d => d.id !== id));
+      toast.success('Doctor deleted');
+      setIsModalOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to delete doctor');
+    }
   };
 
   return (

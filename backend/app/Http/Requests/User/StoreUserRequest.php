@@ -9,7 +9,15 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === 'admin';
+        $user = $this->user();
+        if (! $user || ! in_array($user->role, ['admin', 'superadmin'], true)) {
+            return false;
+        }
+        // Only superadmin can create another superadmin
+        if (($this->input('role')) === 'superadmin' && $user->role !== 'superadmin') {
+            return false;
+        }
+        return true;
     }
 
     public function rules(): array
@@ -18,7 +26,7 @@ class StoreUserRequest extends FormRequest
             'name'                       => 'required|string|max:150',
             'email'                      => 'required|email|max:191|unique:users,email',
             'password'                   => ['required', Password::min(6)->max(128)],
-            'role'                       => 'required|in:admin,doctor,assistant',
+            'role'                       => 'required|in:superadmin,admin,doctor,assistant,accountant',
             'practitionerTypeId'         => 'nullable|exists:practitioner_types,uuid',
             'permissions'                => 'required|array',
             'permissions.showCalendar'   => 'boolean',

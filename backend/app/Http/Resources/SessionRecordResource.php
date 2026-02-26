@@ -10,6 +10,11 @@ class SessionRecordResource extends JsonResource
     {
         return [
             'id'                  => $this->uuid,
+            'patientFileId'       => $this->whenLoaded('patientFile', fn() => $this->patientFile->uuid),
+            'patientId'           => $this->whenLoaded('patientFile', fn() => $this->patientFile->patient?->uuid),
+            'patientName'         => $this->whenLoaded('patientFile', fn() => $this->patientFile->patient?->name),
+            'doctorId'            => $this->whenLoaded('patientFile', fn() => $this->patientFile->doctor?->uuid),
+            'doctorName'          => $this->whenLoaded('patientFile', fn() => $this->patientFile->doctor?->name),
             'appointmentId'       => $this->appointment?->uuid,
             'date'                => $this->date->toDateString(),
             'serviceId'           => $this->service?->uuid,
@@ -17,7 +22,7 @@ class SessionRecordResource extends JsonResource
             'servicePrice'        => $this->service_price,
             'materialsUsed'       => $this->whenLoaded('materialUsages', function () {
                 return $this->materialUsages->map(fn($u) => [
-                    'materialId'   => $u->material->uuid,
+                    'materialId'   => $u->material->uuid ?? null,
                     'materialName' => $u->material_name,
                     'quantity'     => $u->quantity,
                     'unitPrice'    => $u->unit_price,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Users, UserCog, Sparkles, LogOut, Settings, Bell, Shield, Briefcase, Package } from 'lucide-react';
+import { Calendar, Users, UserCog, Sparkles, LogOut, Settings, Bell, Shield, Briefcase, Package, History, BarChart3 } from 'lucide-react';
 import { useAuth } from '../App';
 import CalendarView from './CalendarView';
 import PatientsView from './PatientsView';
@@ -10,8 +10,10 @@ import UsersView from './UsersView';
 import NotificationPanel from './NotificationPanel';
 import PractitionerTypesView from './PractitionerTypesView';
 import MaterialsToolsView from './MaterialsToolsView';
+import BacklogView from './BacklogView';
+import AccountantDashboard from './AccountantDashboard';
 
-type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools';
+type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
@@ -28,6 +30,8 @@ export default function AdminDashboard() {
     { id: 'materials-tools' as Tab, label: 'Materials & Tools', icon: Package, show: user.role === 'admin' },
     { id: 'practitioner-types' as Tab, label: 'Practitioner Types', icon: Briefcase, show: user.role === 'admin' },
     { id: 'users' as Tab, label: 'Users', icon: Shield, show: user.permissions.showUsers },
+    { id: 'backlog' as Tab, label: 'Activity Log', icon: History, show: user.role === 'admin' },
+    { id: 'reports' as Tab, label: 'Sales & Export', icon: BarChart3, show: user.role === 'admin' },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings, show: user.permissions.showSettings },
   ];
 
@@ -98,6 +102,8 @@ export default function AdminDashboard() {
         {activeTab === 'materials-tools' && user.role === 'admin' && <MaterialsToolsView />}
         {activeTab === 'practitioner-types' && user.role === 'admin' && <PractitionerTypesView />}
         {activeTab === 'users' && user.permissions.showUsers && <UsersView onUsersUpdate={updateAllUsers} />}
+        {activeTab === 'backlog' && user.role === 'admin' && <BacklogView />}
+        {activeTab === 'reports' && user.role === 'admin' && <AccountantDashboard embedded />}
         {activeTab === 'settings' && user.permissions.showSettings && <SettingsView />}
 
         {/* Notification Panel */}

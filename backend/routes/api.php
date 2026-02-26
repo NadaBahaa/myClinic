@@ -1,17 +1,22 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DoctorController;
 use App\Http\Controllers\Api\V1\MaterialOrToolController;
 use App\Http\Controllers\Api\V1\NotificationRecordController;
 use App\Http\Controllers\Api\V1\PatientController;
+use App\Http\Controllers\Api\V1\PatientFileAttachmentController;
 use App\Http\Controllers\Api\V1\PatientFileController;
 use App\Http\Controllers\Api\V1\PatientPhotoController;
 use App\Http\Controllers\Api\V1\PractitionerTypeController;
 use App\Http\Controllers\Api\V1\PrescriptionController;
+use App\Http\Controllers\Api\V1\ReportsController;
 use App\Http\Controllers\Api\V1\ServiceController;
+use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\SessionRecordController;
+use App\Http\Controllers\Api\V1\SuperAdminController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +31,10 @@ Route::prefix('v1')->group(function () {
     // ── Public ────────────────────────────────────────────────────────────
     Route::post('/auth/login', [AuthController::class, 'login'])
         ->middleware('throttle:5,1'); // 5 attempts per minute (brute-force protection)
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1');
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])
+        ->middleware('throttle:5,1');
 
     // ── Authenticated ─────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'sanitize'])->group(function () {
@@ -35,8 +44,22 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me',        [AuthController::class, 'me']);
         Route::put('/auth/password',  [AuthController::class, 'changePassword']);
 
+        // System modules & feature flags (read: all; update: superadmin only)
+        Route::get('system/modules',       [SuperAdminController::class, 'modules']);
+        Route::get('system/feature-flags', [SuperAdminController::class, 'featureFlags']);
+        Route::put('system/modules',       [SuperAdminController::class, 'updateModules'])->middleware('role:superadmin');
+        Route::put('system/feature-flags', [SuperAdminController::class, 'updateFeatureFlags'])->middleware('role:superadmin');
+
+        // Super admin only: full activity log, all users, activate/deactivate
+        Route::get('system/activity-log',  [SuperAdminController::class, 'activityLog'])->middleware('role:superadmin');
+        Route::get('system/api-log',       [SuperAdminController::class, 'apiRequestLog'])->middleware('role:superadmin');
+        Route::post('system/run-artisan',  [SuperAdminController::class, 'runArtisan'])->middleware('role:superadmin');
+        Route::get('system/users',         [SuperAdminController::class, 'users'])->middleware('role:superadmin');
+        Route::put('system/users/{uuid}/active', [SuperAdminController::class, 'setUserActive'])->middleware('role:superadmin');
+
         // ── Admin only ───────────────────────────────────────────────────
         Route::middleware('role:admin')->group(function () {
+            Route::get('activity-log', [ActivityLogController::class, 'index']);
             Route::apiResource('users', UserController::class);
 
             Route::apiResource('practitioner-types', PractitionerTypeController::class)
@@ -93,14 +116,30 @@ Route::prefix('v1')->group(function () {
             Route::post('photos',            [PatientPhotoController::class, 'store']);
             Route::delete('photos/{photoUuid}', [PatientPhotoController::class, 'destroy']);
 
+            // Attachments (doctor uploads; stored in patient file and DB)
+            Route::get('attachments', [PatientFileAttachmentController::class, 'index']);
+            Route::post('attachments', [PatientFileAttachmentController::class, 'store']);
+            Route::delete('attachments/{attachmentUuid}', [PatientFileAttachmentController::class, 'destroy']);
+
             // Prescriptions
             Route::apiResource('prescriptions', PrescriptionController::class)
                 ->parameters(['prescriptions' => 'uuid']);
         });
 
+        // Reports (admin + accountant)
+        Route::get('reports/sessions', [ReportsController::class, 'sessions'])
+            ->middleware('role:admin,accountant');
+        Route::get('reports/sessions/export', [ReportsController::class, 'exportSessions'])
+            ->middleware('role:admin,accountant');
+
         // Notifications
         Route::get('notifications/pending', [NotificationRecordController::class, 'pending']);
         Route::get('notifications',         [NotificationRecordController::class, 'index']);
         Route::post('notifications',        [NotificationRecordController::class, 'store']);
+        Route::post('notifications/send-reminders', [NotificationRecordController::class, 'sendReminders']);
+
+        // Settings (admin/superadmin)
+        Route::get('settings',  [SettingsController::class, 'index']);
+        Route::put('settings',  [SettingsController::class, 'update'])->middleware('role:admin,superadmin');
     });
 });

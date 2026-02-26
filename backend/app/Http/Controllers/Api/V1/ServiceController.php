@@ -25,6 +25,14 @@ class ServiceController extends Controller
             $query->where('popular', true);
         }
 
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('category', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
         return response()->json(ServiceResource::collection($query->get()));
     }
 

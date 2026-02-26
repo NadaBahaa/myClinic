@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
+use App\Models\ActivityLog;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
@@ -18,6 +19,11 @@ class AppointmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Appointment::with(['patient', 'doctor', 'services']);
+
+        // Doctor: only their own appointments
+        if ($request->user()?->role === 'doctor' && $request->user()->doctor) {
+            $query->where('doctor_id', $request->user()->doctor->id);
+        }
 
         if ($date = $request->query('date')) {
             $query->whereDate('date', $date);
@@ -35,6 +41,13 @@ class AppointmentController extends Controller
         if ($patientUuid = $request->query('patient')) {
             $patient = Patient::where('uuid', $patientUuid)->first();
             if ($patient) $query->where('patient_id', $patient->id);
+        }
+
+        if ($dateFrom = $request->query('date_from')) {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->query('date_to')) {
+            $query->whereDate('date', '<=', $dateTo);
         }
 
         return response()->json(AppointmentResource::collection($query->latest('date')->get()));
@@ -68,6 +81,7 @@ class AppointmentController extends Controller
         }
 
         $appointment->load(['patient', 'doctor', 'services']);
+        ActivityLog::log($request->user()?->id, 'created', 'appointment', $appointment->uuid, null, $appointment->toArray());
 
         return response()->json(new AppointmentResource($appointment), 201);
     }
@@ -101,6 +115,7 @@ class AppointmentController extends Controller
             }
         }
 
+        $old = $appt->toArray();
         $appt->update($data);
 
         if ($request->has('services')) {
@@ -110,6 +125,7 @@ class AppointmentController extends Controller
         }
 
         $appt->load(['patient', 'doctor', 'services']);
+        ActivityLog::log($request->user()?->id, 'updated', 'appointment', $appt->uuid, $old, $appt->fresh()->toArray());
 
         return response()->json(new AppointmentResource($appt));
     }
@@ -117,16 +133,21 @@ class AppointmentController extends Controller
     public function destroy(string $uuid): JsonResponse
     {
         $appt = Appointment::where('uuid', $uuid)->firstOrFail();
+        $snapshot = $appt->toArray();
         $appt->update(['status' => 'cancelled']);
+        $appt->delete(); // soft delete
+        ActivityLog::log(request()->user()?->id, 'deleted', 'appointment', $uuid, $snapshot, null);
 
         return response()->json(['message' => 'Appointment cancelled']);
     }
 
     public function byDate(string $date): JsonResponse
     {
-        $appts = Appointment::with(['patient', 'doctor', 'services'])
-            ->whereDate('date', $date)
-            ->get();
+        $query = Appointment::with(['patient', 'doctor', 'services'])->whereDate('date', $date);
+        if (request()->user()?->role === 'doctor' && request()->user()->doctor) {
+            $query->where('doctor_id', request()->user()->doctor->id);
+        }
+        $appts = $query->get();
 
         return response()->json(AppointmentResource::collection($appts));
     }
@@ -134,6 +155,10 @@ class AppointmentController extends Controller
     public function byDoctor(string $uuid): JsonResponse
     {
         $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
+        // Doctor role: may only request their own appointments
+        if (request()->user()?->role === 'doctor' && request()->user()->doctor?->id !== $doctor->id) {
+            return response()->json(AppointmentResource::collection(collect()));
+        }
 
         $appts = Appointment::with(['patient', 'doctor', 'services'])
             ->where('doctor_id', $doctor->id)

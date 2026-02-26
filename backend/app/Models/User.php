@@ -12,7 +12,7 @@ class User extends Authenticatable
     use HasApiTokens, Notifiable;
 
     protected $fillable = [
-        'uuid', 'name', 'email', 'password', 'role', 'practitioner_type_id',
+        'uuid', 'name', 'email', 'password', 'role', 'is_active', 'practitioner_type_id',
         'perm_show_calendar', 'perm_show_patients', 'perm_show_doctors',
         'perm_show_services', 'perm_show_users', 'perm_show_settings',
     ];
@@ -21,6 +21,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'password'            => 'hashed',
+        'is_active'           => 'boolean',
         'perm_show_calendar'  => 'boolean',
         'perm_show_patients'  => 'boolean',
         'perm_show_doctors'   => 'boolean',
