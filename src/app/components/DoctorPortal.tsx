@@ -99,9 +99,17 @@ export default function DoctorPortal() {
 
   if (!user) return null;
 
-  // Determine available views based on user permissions
-  const showDailyView = user.permissions.showCalendar;
-  const showMonthlyView = user.permissions.showCalendar;
+  const mv = user.moduleVisibility ?? {};
+  const showCalendarModule = mv.calendar !== false && user.permissions.showCalendar;
+  const showPatientsModule = mv.patients !== false && user.permissions.showPatients;
+  const showDailyView = showCalendarModule;
+  const showMonthlyView = showCalendarModule;
+
+  // Default to first visible tab when current is hidden by module
+  useEffect(() => {
+    if (activeTab === "calendar" && !showCalendarModule && showPatientsModule) setActiveTab("patients-day");
+    if ((activeTab === "patients-day" || activeTab === "my-patients") && !showPatientsModule && showCalendarModule) setActiveTab("calendar");
+  }, [showCalendarModule, showPatientsModule]);
 
   const handlePrevious = () => {
     const newDate = new Date(currentDate);
@@ -208,44 +216,50 @@ export default function DoctorPortal() {
         {/* Navigation Tabs */}
         <div className="mb-6 border-b border-gray-200">
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveTab("calendar")}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                activeTab === "calendar"
-                  ? "border-pink-600 text-pink-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Calendar className="w-5 h-5" />
-              My Schedule
-            </button>
-            <button
-              onClick={() => setActiveTab("patients-day")}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                activeTab === "patients-day"
-                  ? "border-pink-600 text-pink-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <Bell className="w-5 h-5" />
-              Patients of the Day
-            </button>
-            <button
-              onClick={() => setActiveTab("my-patients")}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                activeTab === "my-patients"
-                  ? "border-pink-600 text-pink-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <FolderOpen className="w-5 h-5" />
-              My Patients
-            </button>
+            {showCalendarModule && (
+              <button
+                onClick={() => setActiveTab("calendar")}
+                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                  activeTab === "calendar"
+                    ? "border-pink-600 text-pink-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <Calendar className="w-5 h-5" />
+                My Schedule
+              </button>
+            )}
+            {showPatientsModule && (
+              <>
+                <button
+                  onClick={() => setActiveTab("patients-day")}
+                  className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                    activeTab === "patients-day"
+                      ? "border-pink-600 text-pink-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  Patients of the Day
+                </button>
+                <button
+                  onClick={() => setActiveTab("my-patients")}
+                  className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                    activeTab === "my-patients"
+                      ? "border-pink-600 text-pink-600"
+                      : "border-transparent text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <FolderOpen className="w-5 h-5" />
+                  My Patients
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Patients of the Day Tab */}
-        {activeTab === "patients-day" && (
+        {showPatientsModule && activeTab === "patients-day" && (
           <PatientsOfDayView
             appointments={appointments}
             userRole="doctor"
@@ -254,12 +268,12 @@ export default function DoctorPortal() {
         )}
 
         {/* My Patients Tab */}
-        {activeTab === "my-patients" && (
+        {showPatientsModule && activeTab === "my-patients" && (
           <PatientsView isDoctorView={true} doctorId={user.doctorId ?? user.id} doctorName={user.name} />
         )}
 
         {/* Calendar Tab */}
-        {activeTab === "calendar" && (
+        {showCalendarModule && activeTab === "calendar" && (
           <>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

@@ -185,9 +185,13 @@ export default function UsersView({ onUsersUpdate }: UsersViewProps) {
                 {user.permissions.showServices && <div>• Services</div>}
                 {user.permissions.showUsers && <div>• Users</div>}
                 {user.permissions.showSettings && <div>• Settings</div>}
+                {user.permissions.showActivityLog && <div>• Activity Log</div>}
+                {user.permissions.showReports && <div>• Sales & Export</div>}
+                {user.permissions.showMaterialsTools && <div>• Materials & Tools</div>}
+                {user.permissions.showPractitionerTypes && <div>• Practitioner Types</div>}
               </div>
               <div className="mt-2 text-xs text-gray-500">
-                {getPermissionsCount(user.permissions)} of 6 permissions enabled
+                {getPermissionsCount(user.permissions)} of 10 permissions enabled
               </div>
             </div>
 

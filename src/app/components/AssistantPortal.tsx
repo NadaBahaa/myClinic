@@ -50,19 +50,20 @@ export default function AssistantPortal() {
 
   if (!user) return null;
 
+  const mv = user.moduleVisibility ?? {};
   const tabs = [
-    { id: 'calendar' as Tab, label: 'Calendar', icon: Calendar, show: user.permissions.showCalendar },
-    { id: 'patients-day' as Tab, label: 'Patients of the Day', icon: BellIcon, show: user.permissions.showPatients },
-    { id: 'patients' as Tab, label: 'All Patients', icon: Users, show: user.permissions.showPatients },
-    { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, show: user.permissions.showDoctors },
-    { id: 'services' as Tab, label: 'Services', icon: Sparkles, show: user.permissions.showServices },
+    { id: 'calendar' as Tab, label: 'Calendar', icon: Calendar, show: mv.calendar !== false && user.permissions.showCalendar },
+    { id: 'patients-day' as Tab, label: 'Patients of the Day', icon: BellIcon, show: mv.patients !== false && user.permissions.showPatients },
+    { id: 'patients' as Tab, label: 'All Patients', icon: Users, show: mv.patients !== false && user.permissions.showPatients },
+    { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, show: mv.doctors !== false && user.permissions.showDoctors },
+    { id: 'services' as Tab, label: 'Services', icon: Sparkles, show: mv.services !== false && user.permissions.showServices },
   ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="bg-white border-b md:border-r md:border-b-0 border-gray-200 w-full md:w-64 flex-shrink-0">
-        <div className="p-6 border-b border-gray-200">
+      <aside className="bg-white border-b md:border-r md:border-b-0 border-gray-200 w-full md:w-64 flex-shrink-0 flex flex-col min-h-0">
+        <div className="p-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-6 h-6 text-pink-600" />
             <span className="text-lg text-gray-900">BeautyClinic</span>
@@ -76,7 +77,7 @@ export default function AssistantPortal() {
           </div>
         </div>
 
-        <nav className="p-4">
+        <nav className="flex-1 overflow-y-auto min-h-0 p-4">
           <div className="space-y-1">
             {tabs.filter(tab => tab.show).map((tab) => {
               const Icon = tab.icon;
@@ -90,47 +91,46 @@ export default function AssistantPortal() {
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span>{tab.label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-left truncate">{tab.label}</span>
                 </button>
               );
             })}
           </div>
-
-          <div className="mt-8 space-y-1">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors relative"
-            >
-              <BellIcon className="w-5 h-5" />
-              <span>Notifications</span>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
-          </div>
         </nav>
+
+        <div className="p-4 flex-shrink-0 border-t border-gray-200 space-y-1">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors relative"
+          >
+            <BellIcon className="w-5 h-5" />
+            <span>Notifications</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Logout</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 relative">
-        {activeTab === 'calendar' && user.permissions.showCalendar && <CalendarView />}
-        {activeTab === 'patients-day' && user.permissions.showPatients && (
+        {activeTab === 'calendar' && mv.calendar !== false && user.permissions.showCalendar && <CalendarView />}
+        {activeTab === 'patients-day' && mv.patients !== false && user.permissions.showPatients && (
           <PatientsOfDayView
             appointments={appointments}
             userRole="assistant"
             currentUserId={user.id}
           />
         )}
-        {activeTab === 'patients' && user.permissions.showPatients && <PatientsView />}
-        {activeTab === 'doctors' && user.permissions.showDoctors && <DoctorsView />}
-        {activeTab === 'services' && user.permissions.showServices && <ServicesView />}
+        {activeTab === 'patients' && mv.patients !== false && user.permissions.showPatients && <PatientsView />}
+        {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
+        {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
 
         {/* Notification Panel */}
         {showNotifications && (

@@ -1,10 +1,13 @@
 import { apiFetch } from '../api';
 
+export type ModuleEnabledForRoles = Record<string, boolean>;
+
 export interface SystemModule {
   key: string;
   name: string;
   description: string | null;
   enabled: boolean;
+  enabledForRoles?: ModuleEnabledForRoles;
   sortOrder: number;
 }
 
@@ -26,13 +29,26 @@ export interface SystemUser {
   doctorId?: string;
 }
 
+export type RoleTabPermissions = Record<string, {
+  showCalendar: boolean;
+  showPatients: boolean;
+  showDoctors: boolean;
+  showServices: boolean;
+  showUsers: boolean;
+  showSettings: boolean;
+  showActivityLog: boolean;
+  showReports: boolean;
+  showMaterialsTools: boolean;
+  showPractitionerTypes: boolean;
+}>;
+
 export const superAdminService = {
   async getModules(): Promise<SystemModule[]> {
     const res = await apiFetch<{ data: SystemModule[] }>('/system/modules');
     return res.data;
   },
 
-  async updateModules(modules: { key: string; enabled: boolean }[]): Promise<void> {
+  async updateModules(modules: { key: string; enabledForRoles?: ModuleEnabledForRoles }[]): Promise<void> {
     await apiFetch('/system/modules', { method: 'PUT', body: { modules } });
   },
 
@@ -43,6 +59,15 @@ export const superAdminService = {
 
   async updateFeatureFlags(flags: { key: string; enabled: boolean }[]): Promise<void> {
     await apiFetch('/system/feature-flags', { method: 'PUT', body: { flags } });
+  },
+
+  async getRoleTabVisibility(): Promise<RoleTabPermissions> {
+    const res = await apiFetch<{ data: RoleTabPermissions }>('/system/role-tab-visibility');
+    return res.data ?? {};
+  },
+
+  async updateRoleTabVisibility(perRole: RoleTabPermissions): Promise<void> {
+    await apiFetch('/system/role-tab-visibility', { method: 'PUT', body: { perRole } });
   },
 
   async getActivityLog(params?: { subject_type?: string; action?: string; user_id?: string; date_from?: string; date_to?: string; page?: number }): Promise<{

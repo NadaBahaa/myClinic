@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
+use App\Models\SystemModule;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
@@ -36,9 +37,14 @@ class AuthController extends Controller
 
         $user->load(['practitionerType', 'doctor']);
 
+        $userData = (new UserResource($user))->toArray($request);
+        $userData['moduleVisibility'] = $user->role === 'superadmin'
+            ? array_fill_keys(SystemModule::orderBy('sort_order')->pluck('key')->toArray(), true)
+            : SystemModule::visibilityForRole($user->role);
+
         return response()->json([
             'token' => $token,
-            'user'  => new UserResource($user),
+            'user'  => $userData,
         ]);
     }
 
@@ -51,9 +57,15 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $request->user()->load(['practitionerType', 'doctor']);
+        $user = $request->user();
+        $user->load(['practitionerType', 'doctor']);
 
-        return response()->json(new UserResource($request->user()));
+        $userData = (new UserResource($user))->toArray($request);
+        $userData['moduleVisibility'] = $user->role === 'superadmin'
+            ? array_fill_keys(SystemModule::orderBy('sort_order')->pluck('key')->toArray(), true)
+            : SystemModule::visibilityForRole($user->role);
+
+        return response()->json($userData);
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse

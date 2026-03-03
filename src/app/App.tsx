@@ -28,6 +28,8 @@ export interface User {
   practitionerTypeId?: string | null;
   doctorId?: string | null;
   permissions: UserPermissions;
+  /** Module keys enabled for this user's role (from Super Admin Modules). Absent or true = visible. */
+  moduleVisibility?: Record<string, boolean>;
 }
 
 interface AuthContextType {

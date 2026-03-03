@@ -12,6 +12,7 @@ import {
   Terminal,
   Network,
   Calendar,
+  PanelTopOpen,
 } from 'lucide-react';
 import { useAuth } from '../App';
 import CalendarView from './CalendarView';
@@ -21,20 +22,21 @@ import {
   type SystemModule,
   type SystemFeatureFlag,
   type SystemUser,
+  type RoleTabPermissions,
 } from '../../lib/services/superAdminService';
 import { userService } from '../../lib/services/userService';
 import { Switch } from './ui/switch';
 import { toast } from 'sonner';
 
-const DEFAULT_PERMISSIONS: Record<string, { showCalendar: boolean; showPatients: boolean; showDoctors: boolean; showServices: boolean; showUsers: boolean; showSettings: boolean }> = {
-  superadmin: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: true, showSettings: true },
-  admin: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: true, showSettings: true },
-  doctor: { showCalendar: true, showPatients: true, showDoctors: false, showServices: true, showUsers: false, showSettings: false },
-  assistant: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: false, showSettings: false },
-  accountant: { showCalendar: false, showPatients: false, showDoctors: false, showServices: false, showUsers: false, showSettings: false },
+const DEFAULT_PERMISSIONS: Record<string, { showCalendar: boolean; showPatients: boolean; showDoctors: boolean; showServices: boolean; showUsers: boolean; showSettings: boolean; showActivityLog: boolean; showReports: boolean; showMaterialsTools: boolean; showPractitionerTypes: boolean }> = {
+  superadmin: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: true, showSettings: true, showActivityLog: true, showReports: true, showMaterialsTools: true, showPractitionerTypes: true },
+  admin: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: true, showSettings: true, showActivityLog: true, showReports: true, showMaterialsTools: true, showPractitionerTypes: true },
+  doctor: { showCalendar: true, showPatients: true, showDoctors: false, showServices: true, showUsers: false, showSettings: false, showActivityLog: false, showReports: false, showMaterialsTools: false, showPractitionerTypes: false },
+  assistant: { showCalendar: true, showPatients: true, showDoctors: true, showServices: true, showUsers: false, showSettings: false, showActivityLog: false, showReports: false, showMaterialsTools: false, showPractitionerTypes: false },
+  accountant: { showCalendar: false, showPatients: false, showDoctors: false, showServices: false, showUsers: false, showSettings: false, showActivityLog: false, showReports: false, showMaterialsTools: false, showPractitionerTypes: false },
 };
 
-type Tab = 'calendar' | 'modules' | 'features' | 'activity' | 'users' | 'api-log' | 'tinker';
+type Tab = 'calendar' | 'tab-visibility' | 'modules' | 'features' | 'activity' | 'users' | 'api-log' | 'tinker';
 
 export default function SuperAdminDashboard() {
   const { user, logout } = useAuth();
@@ -65,6 +67,9 @@ export default function SuperAdminDashboard() {
   const [tinkerOutput, setTinkerOutput] = useState('');
   const [tinkerRunning, setTinkerRunning] = useState(false);
 
+  const [roleTabVisibility, setRoleTabVisibility] = useState<RoleTabPermissions>({});
+  const [roleTabDirty, setRoleTabDirty] = useState(false);
+
   useEffect(() => {
     if (activeTab === 'modules') {
       setLoading(true);
@@ -83,6 +88,7 @@ export default function SuperAdminDashboard() {
     if (activeTab === 'users') {
       setLoading(true);
       superAdminService.getUsers().then(setUsers).catch(() => toast.error('Failed to load users')).finally(() => setLoading(false));
+      superAdminService.getRoleTabVisibility().then(setRoleTabVisibility).catch(() => {});
     }
   }, [activeTab]);
 
@@ -106,14 +112,32 @@ export default function SuperAdminDashboard() {
     }
   }, [activeTab, apiLogPage]);
 
-  const handleModuleToggle = (key: string, enabled: boolean) => {
-    setModules((prev) => prev.map((m) => (m.key === key ? { ...m, enabled } : m)));
+  useEffect(() => {
+    if (activeTab === 'tab-visibility') {
+      setLoading(true);
+      superAdminService.getRoleTabVisibility().then(setRoleTabVisibility).catch(() => toast.error('Failed to load role tab visibility')).finally(() => setLoading(false));
+    }
+  }, [activeTab]);
+
+  const MODULE_ROLES = ['admin', 'doctor', 'assistant', 'accountant'] as const;
+
+  const handleModuleRoleToggle = (moduleKey: string, role: string, enabled: boolean) => {
+    setModules((prev) =>
+      prev.map((m) => {
+        if (m.key !== moduleKey) return m;
+        const next = { ...(m.enabledForRoles || {}) };
+        next[role] = enabled;
+        return { ...m, enabledForRoles: next };
+      })
+    );
     setModuleDirty(true);
   };
 
   const saveModules = async () => {
     try {
-      await superAdminService.updateModules(modules.map((m) => ({ key: m.key, enabled: m.enabled })));
+      await superAdminService.updateModules(
+        modules.map((m) => ({ key: m.key, enabledForRoles: m.enabledForRoles || {} }))
+      );
       setModuleDirty(false);
       toast.success('Modules updated');
     } catch {
@@ -153,7 +177,20 @@ export default function SuperAdminDashboard() {
     }
     setSavingUser(true);
     try {
-      const perms = DEFAULT_PERMISSIONS[addUserForm.role] ?? DEFAULT_PERMISSIONS.assistant;
+      const roleDefaults = roleTabVisibility[addUserForm.role];
+      const base = DEFAULT_PERMISSIONS[addUserForm.role] ?? DEFAULT_PERMISSIONS.assistant;
+      const perms = {
+        showCalendar: roleDefaults?.showCalendar ?? base.showCalendar,
+        showPatients: roleDefaults?.showPatients ?? base.showPatients,
+        showDoctors: roleDefaults?.showDoctors ?? base.showDoctors,
+        showServices: roleDefaults?.showServices ?? base.showServices,
+        showUsers: roleDefaults?.showUsers ?? base.showUsers,
+        showSettings: roleDefaults?.showSettings ?? base.showSettings,
+        showActivityLog: roleDefaults?.showActivityLog ?? base.showActivityLog,
+        showReports: roleDefaults?.showReports ?? base.showReports,
+        showMaterialsTools: roleDefaults?.showMaterialsTools ?? base.showMaterialsTools,
+        showPractitionerTypes: roleDefaults?.showPractitionerTypes ?? base.showPractitionerTypes,
+      };
       await userService.create({
         name: addUserForm.name.trim(),
         email: addUserForm.email.trim(),
@@ -175,8 +212,41 @@ export default function SuperAdminDashboard() {
 
   if (!user) return null;
 
+  const TAB_LABELS: Record<string, string> = {
+    showCalendar: 'Calendar',
+    showPatients: 'Patients',
+    showDoctors: 'Doctors',
+    showServices: 'Services',
+    showUsers: 'Users',
+    showSettings: 'Settings',
+    showActivityLog: 'Activity Log',
+    showReports: 'Sales & Export',
+    showMaterialsTools: 'Materials & Tools',
+    showPractitionerTypes: 'Practitioner Types',
+  };
+  const ROLES = ['admin', 'doctor', 'assistant', 'accountant'] as const;
+
+  const handleRoleTabToggle = (role: string, key: string, value: boolean) => {
+    setRoleTabVisibility((prev) => ({
+      ...prev,
+      [role]: { ...(prev[role] || {}), [key]: value },
+    }));
+    setRoleTabDirty(true);
+  };
+
+  const saveRoleTabVisibility = async () => {
+    try {
+      await superAdminService.updateRoleTabVisibility(roleTabVisibility);
+      setRoleTabDirty(false);
+      toast.success('Role tab visibility saved');
+    } catch {
+      toast.error('Failed to save');
+    }
+  };
+
   const tabs: { id: Tab; label: string; icon: typeof LayoutGrid }[] = [
     { id: 'calendar', label: 'Calendar', icon: Calendar },
+    { id: 'tab-visibility', label: 'Tab visibility by role', icon: PanelTopOpen },
     { id: 'modules', label: 'Modules', icon: LayoutGrid },
     { id: 'features', label: 'Features & Fields', icon: ToggleLeft },
     { id: 'activity', label: 'Activity Log', icon: History },
@@ -187,17 +257,19 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      <aside className="bg-white border-b md:border-r border-gray-200 w-full md:w-64 flex-shrink-0 p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Shield className="w-6 h-6 text-amber-600" />
-          <span className="text-lg font-semibold text-gray-900">Super Admin</span>
+      <aside className="bg-white border-b md:border-r border-gray-200 w-full md:w-64 flex-shrink-0 flex flex-col min-h-0">
+        <div className="p-6 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-6 h-6 text-amber-600" />
+            <span className="text-lg font-semibold text-gray-900">Super Admin</span>
+          </div>
+          <p className="text-sm text-gray-600">{user.name}</p>
+          <p className="text-xs text-gray-500">{user.email}</p>
+          <span className="inline-block mt-2 px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full font-medium">
+            Full system control
+          </span>
         </div>
-        <p className="text-sm text-gray-600">{user.name}</p>
-        <p className="text-xs text-gray-500">{user.email}</p>
-        <span className="inline-block mt-2 px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full font-medium">
-          Full system control
-        </span>
-        <nav className="mt-6 space-y-1">
+        <nav className="flex-1 overflow-y-auto min-h-0 p-4 space-y-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -208,44 +280,105 @@ export default function SuperAdminDashboard() {
                   activeTab === tab.id ? 'bg-amber-50 text-amber-800' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                {tab.label}
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-left truncate">{tab.label}</span>
               </button>
             );
           })}
         </nav>
-        <button
-          onClick={() => authService.logout().then(() => logout())}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 mt-8"
-        >
-          <LogOut className="w-5 h-5" />
-          Logout
-        </button>
+        <div className="p-4 flex-shrink-0 border-t border-gray-200">
+          <button
+            onClick={() => authService.logout().then(() => logout())}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 p-4 md:p-8 overflow-auto">
         {activeTab === 'calendar' && <CalendarView />}
-        {activeTab === 'modules' && (
+        {activeTab === 'tab-visibility' && (
           <div>
-            <h1 className="text-2xl text-gray-900 mb-2">Modules</h1>
-            <p className="text-gray-600 mb-6">Enable or disable entire modules for the system. Disabled modules are hidden from all roles.</p>
+            <h1 className="text-2xl text-gray-900 mb-2">Tab visibility by role</h1>
+            <p className="text-gray-600 mb-6">Set which sidebar tabs (Calendar, Patients, Doctors, etc.) are visible by default for each role. New users get these defaults; existing users keep their per-user permissions (editable in Users &amp; Roles).</p>
             {loading ? (
               <p className="text-gray-500">Loading...</p>
             ) : (
               <>
-                <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
-                  {modules.map((m) => (
-                    <div key={m.key} className="flex items-center justify-between px-6 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{m.name}</p>
-                        {m.description && <p className="text-sm text-gray-500">{m.description}</p>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {ROLES.map((role) => {
+                    const perms = roleTabVisibility[role] || {};
+                    return (
+                      <div key={role} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                          <h2 className="font-semibold text-gray-900 capitalize">{role}</h2>
+                        </div>
+                        <div className="p-4 space-y-3">
+                          {(Object.keys(TAB_LABELS) as Array<keyof typeof TAB_LABELS>).map((key) => (
+                            <div key={key} className="flex items-center justify-between">
+                              <span className="text-sm text-gray-700">{TAB_LABELS[key]}</span>
+                              <Switch
+                                checked={!!perms[key]}
+                                onCheckedChange={(checked) => handleRoleTabToggle(role, key, checked)}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <Switch
-                        checked={m.enabled}
-                        onCheckedChange={(checked) => handleModuleToggle(m.key, checked)}
-                      />
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+                {roleTabDirty && (
+                  <button
+                    onClick={saveRoleTabVisibility}
+                    className="mt-6 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                  >
+                    Save tab visibility
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
+        {activeTab === 'modules' && (
+          <div>
+            <h1 className="text-2xl text-gray-900 mb-2">Modules per role</h1>
+            <p className="text-gray-600 mb-6">Enable or disable each module per role. For example, you can enable Patients for Admin only and leave it off for Doctor and Assistant.</p>
+            {loading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="px-4 py-3 font-medium text-gray-900">Module</th>
+                        {MODULE_ROLES.map((r) => (
+                          <th key={r} className="px-4 py-3 font-medium text-gray-700 text-center capitalize">{r}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {modules.map((m) => (
+                        <tr key={m.key} className="border-b border-gray-100">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-900">{m.name}</p>
+                            {m.description && <p className="text-sm text-gray-500">{m.description}</p>}
+                          </td>
+                          {MODULE_ROLES.map((role) => (
+                            <td key={role} className="px-4 py-3 text-center">
+                              <Switch
+                                checked={m.enabledForRoles?.[role] ?? m.enabled}
+                                onCheckedChange={(checked) => handleModuleRoleToggle(m.key, role, checked)}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
                 {moduleDirty && (
                   <button

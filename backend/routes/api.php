@@ -54,6 +54,8 @@ Route::prefix('v1')->group(function () {
         Route::get('system/activity-log',  [SuperAdminController::class, 'activityLog'])->middleware('role:superadmin');
         Route::get('system/api-log',       [SuperAdminController::class, 'apiRequestLog'])->middleware('role:superadmin');
         Route::post('system/run-artisan',  [SuperAdminController::class, 'runArtisan'])->middleware('role:superadmin');
+        Route::get('system/role-tab-visibility', [SuperAdminController::class, 'roleTabVisibility'])->middleware('role:superadmin');
+        Route::put('system/role-tab-visibility', [SuperAdminController::class, 'updateRoleTabVisibility'])->middleware('role:superadmin');
         Route::get('system/users',         [SuperAdminController::class, 'users'])->middleware('role:superadmin');
         Route::put('system/users/{uuid}/active', [SuperAdminController::class, 'setUserActive'])->middleware('role:superadmin');
 

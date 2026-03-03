@@ -10,6 +10,10 @@ export interface UserPermissions {
   showServices: boolean;
   showUsers: boolean;
   showSettings: boolean;
+  showActivityLog: boolean;
+  showReports: boolean;
+  showMaterialsTools: boolean;
+  showPractitionerTypes: boolean;
 }
 
 export interface SystemUser {
@@ -37,6 +41,10 @@ const defaultPermissions: Record<string, UserPermissions> = {
     showServices: true,
     showUsers: true,
     showSettings: true,
+    showActivityLog: true,
+    showReports: true,
+    showMaterialsTools: true,
+    showPractitionerTypes: true,
   },
   doctor: {
     showCalendar: true,
@@ -45,6 +53,10 @@ const defaultPermissions: Record<string, UserPermissions> = {
     showServices: true,
     showUsers: false,
     showSettings: false,
+    showActivityLog: false,
+    showReports: false,
+    showMaterialsTools: false,
+    showPractitionerTypes: false,
   },
   assistant: {
     showCalendar: true,
@@ -53,6 +65,22 @@ const defaultPermissions: Record<string, UserPermissions> = {
     showServices: true,
     showUsers: false,
     showSettings: false,
+    showActivityLog: false,
+    showReports: false,
+    showMaterialsTools: false,
+    showPractitionerTypes: false,
+  },
+  accountant: {
+    showCalendar: false,
+    showPatients: false,
+    showDoctors: false,
+    showServices: false,
+    showUsers: false,
+    showSettings: false,
+    showActivityLog: false,
+    showReports: false,
+    showMaterialsTools: false,
+    showPractitionerTypes: false,
   },
 };
 
@@ -143,13 +171,17 @@ export default function UserDetailModal({ user, onClose, onSave, existingEmails 
     onClose();
   };
 
-  const permissionLabels: Record<keyof UserPermissions, string> = {
+  const permissionLabels: Record<string, string> = {
     showCalendar: 'Calendar',
     showPatients: 'Patients',
     showDoctors: 'Doctors',
     showServices: 'Services',
     showUsers: 'User Management',
     showSettings: 'Settings',
+    showActivityLog: 'Activity Log',
+    showReports: 'Sales & Export',
+    showMaterialsTools: 'Materials & Tools',
+    showPractitionerTypes: 'Practitioner Types',
   };
 
   return (
@@ -312,7 +344,7 @@ export default function UserDetailModal({ user, onClose, onSave, existingEmails 
                 >
                   <input
                     type="checkbox"
-                    checked={formData.permissions[permission]}
+                    checked={!!formData.permissions[permission]}
                     onChange={() => togglePermission(permission)}
                     className="rounded border-gray-300"
                   />

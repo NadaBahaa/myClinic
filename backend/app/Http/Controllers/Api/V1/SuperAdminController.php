@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ActivityLogResource;
 use App\Models\ActivityLog;
 use App\Models\ApiRequestLog;
+use App\Models\Setting;
 use App\Models\SystemFeatureFlag;
 use App\Models\SystemModule;
 use App\Models\User;
@@ -15,35 +16,62 @@ use Illuminate\Support\Facades\Artisan;
 
 class SuperAdminController extends Controller
 {
+    private const ROLES_FOR_MODULES = ['admin', 'doctor', 'assistant', 'accountant'];
+
     /**
-     * List all modules (all auth can read; superadmin can update via updateModules).
+     * List all modules with per-role enabled state.
      */
     public function modules(): JsonResponse
     {
         $modules = SystemModule::orderBy('sort_order')->get();
         return response()->json([
             'data' => $modules->map(fn ($m) => [
-                'key'         => $m->key,
-                'name'        => $m->name,
-                'description' => $m->description,
-                'enabled'     => $m->enabled,
-                'sortOrder'   => $m->sort_order,
+                'key'             => $m->key,
+                'name'            => $m->name,
+                'description'     => $m->description,
+                'enabled'         => $m->enabled,
+                'enabledForRoles' => $this->normalizeEnabledForRoles($m->enabled_for_roles, $m->enabled),
+                'sortOrder'       => $m->sort_order,
             ]),
         ]);
     }
 
+    private function normalizeEnabledForRoles(?array $byRole, bool $fallback): array
+    {
+        $out = [];
+        foreach (self::ROLES_FOR_MODULES as $role) {
+            $out[$role] = isset($byRole[$role]) ? (bool) $byRole[$role] : $fallback;
+        }
+        return $out;
+    }
+
     /**
-     * Update module enabled state (superadmin only).
+     * Update module enabled state per role (superadmin only).
      */
     public function updateModules(Request $request): JsonResponse
     {
         $request->validate([
             'modules' => 'required|array',
-            'modules.*.key'    => 'required|string|exists:system_modules,key',
-            'modules.*.enabled' => 'required|boolean',
+            'modules.*.key'             => 'required|string|exists:system_modules,key',
+            'modules.*.enabledForRoles' => 'sometimes|array',
+            'modules.*.enabledForRoles.admin'      => 'boolean',
+            'modules.*.enabledForRoles.doctor'     => 'boolean',
+            'modules.*.enabledForRoles.assistant'  => 'boolean',
+            'modules.*.enabledForRoles.accountant' => 'boolean',
         ]);
         foreach ($request->modules as $item) {
-            SystemModule::where('key', $item['key'])->update(['enabled' => $item['enabled']]);
+            $payload = null;
+            if (! empty($item['enabledForRoles'])) {
+                $payload = [];
+                foreach (self::ROLES_FOR_MODULES as $role) {
+                    $payload[$role] = $item['enabledForRoles'][$role] ?? false;
+                }
+            }
+            $update = ['enabled' => ! $payload || in_array(true, $payload, true)];
+            if ($payload !== null) {
+                $update['enabled_for_roles'] = json_encode($payload);
+            }
+            SystemModule::where('key', $item['key'])->update($update);
         }
         return response()->json(['message' => 'Modules updated']);
     }
@@ -113,6 +141,62 @@ class SuperAdminController extends Controller
                 'total'        => $logs->total(),
             ],
         ]);
+    }
+
+    /** Default tab visibility per role (used when no saved setting). */
+    private const DEFAULT_ROLE_TAB_VISIBILITY = [
+        'admin'      => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => true, 'showServices' => true, 'showUsers' => true, 'showSettings' => true, 'showActivityLog' => true, 'showReports' => true, 'showMaterialsTools' => true, 'showPractitionerTypes' => true],
+        'doctor'     => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => false, 'showServices' => true, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
+        'assistant'  => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => true, 'showServices' => true, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
+        'accountant' => ['showCalendar' => false, 'showPatients' => false, 'showDoctors' => false, 'showServices' => false, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
+    ];
+
+    private const TAB_VISIBILITY_KEYS = ['showCalendar', 'showPatients', 'showDoctors', 'showServices', 'showUsers', 'showSettings', 'showActivityLog', 'showReports', 'showMaterialsTools', 'showPractitionerTypes'];
+
+    /**
+     * Get default tab visibility per role (superadmin manages these; new users get these by role).
+     */
+    public function roleTabVisibility(): JsonResponse
+    {
+        $raw = Setting::get('role_default_permissions');
+        $data = $raw ? (json_decode($raw, true) ?: []) : [];
+        $roles = ['admin', 'doctor', 'assistant', 'accountant'];
+        $out = [];
+        foreach ($roles as $role) {
+            $out[$role] = array_merge(
+                self::DEFAULT_ROLE_TAB_VISIBILITY[$role] ?? array_fill_keys(self::TAB_VISIBILITY_KEYS, false),
+                $data[$role] ?? []
+            );
+        }
+        return response()->json(['data' => $out]);
+    }
+
+    /**
+     * Update default tab visibility per role (superadmin only).
+     */
+    public function updateRoleTabVisibility(Request $request): JsonResponse
+    {
+        $request->validate([
+            'perRole' => 'required|array',
+            'perRole.admin'      => 'sometimes|array',
+            'perRole.doctor'     => 'sometimes|array',
+            'perRole.assistant'  => 'sometimes|array',
+            'perRole.accountant' => 'sometimes|array',
+        ]);
+        $perRole = $request->input('perRole', []);
+        $out = [];
+        foreach (['admin', 'doctor', 'assistant', 'accountant'] as $role) {
+            $rolePerms = $perRole[$role] ?? [];
+            $merged = self::DEFAULT_ROLE_TAB_VISIBILITY[$role] ?? [];
+            foreach (self::TAB_VISIBILITY_KEYS as $key) {
+                if (array_key_exists($key, $rolePerms)) {
+                    $merged[$key] = (bool) $rolePerms[$key];
+                }
+            }
+            $out[$role] = $merged;
+        }
+        Setting::set('role_default_permissions', json_encode($out));
+        return response()->json(['message' => 'Role tab visibility updated', 'data' => $out]);
     }
 
     /**
