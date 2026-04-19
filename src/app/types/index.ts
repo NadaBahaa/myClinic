@@ -38,11 +38,31 @@ export interface SessionRecord {
   serviceId: string;
   serviceName: string;
   servicePrice: number;
+  /** Amount discounted when a coupon was applied (session create). */
+  discountAmount?: number;
+  /** List price before coupon; null if no coupon. */
+  originalServicePrice?: number | null;
+  /** Coupon code when a discount was applied. */
+  couponCode?: string | null;
   materialsUsed: SessionMaterialUsage[];
   totalMaterialsCost: number;
   netProfit: number;
   notes?: string;
   performedBy: string; // doctor/assistant who performed
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description?: string | null;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  maxUses?: number | null;
+  usesCount: number;
+  isActive: boolean;
 }
 
 export interface PatientPhoto {

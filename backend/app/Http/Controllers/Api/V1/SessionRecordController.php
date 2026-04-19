@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SessionRecord\StoreSessionRecordRequest;
 use App\Http\Resources\SessionRecordResource;
 use App\Models\Appointment;
+use App\Models\Coupon;
 use App\Models\MaterialOrTool;
 use App\Models\PatientFile;
 use App\Models\Service;
@@ -19,7 +20,7 @@ class SessionRecordController extends Controller
     public function index(string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
-        $sessions = $file->sessions()->with(['materialUsages.material', 'appointment', 'service'])->latest('date')->get();
+        $sessions = $file->sessions()->with(['materialUsages.material', 'appointment', 'service', 'coupon'])->latest('date')->get();
 
         return response()->json(SessionRecordResource::collection($sessions));
     }
@@ -46,17 +47,22 @@ class SessionRecordController extends Controller
         $totalMaterialsCost = 0.0;
         $materialsPayload   = $request->materialsUsed ?? [];
 
+        [$finalServicePrice, $discountAmount, $originalServicePrice, $couponId] = $this->resolveCouponPricing($request);
+
         $session = SessionRecord::create([
-            'patient_file_id'      => $file->id,
-            'appointment_id'       => $appointmentId,
-            'date'                 => $request->date,
-            'service_id'           => $serviceId,
-            'service_name'         => $request->serviceName,
-            'service_price'        => $request->servicePrice,
-            'total_materials_cost' => 0, // updated below
-            'net_profit'           => 0, // updated below
-            'performed_by'         => $request->performedBy,
-            'notes'                => $request->notes,
+            'patient_file_id'        => $file->id,
+            'appointment_id'         => $appointmentId,
+            'date'                   => $request->date,
+            'service_id'             => $serviceId,
+            'coupon_id'              => $couponId,
+            'service_name'           => $request->serviceName,
+            'service_price'          => $finalServicePrice,
+            'discount_amount'        => $discountAmount,
+            'original_service_price' => $originalServicePrice,
+            'total_materials_cost'   => 0, // updated below
+            'net_profit'             => 0, // updated below
+            'performed_by'           => $request->performedBy,
+            'notes'                  => $request->notes,
         ]);
 
         foreach ($materialsPayload as $mu) {
@@ -81,10 +87,10 @@ class SessionRecordController extends Controller
 
         $session->update([
             'total_materials_cost' => $totalMaterialsCost,
-            'net_profit'           => $request->servicePrice - $totalMaterialsCost,
+            'net_profit'           => $finalServicePrice - $totalMaterialsCost,
         ]);
 
-        $session->load(['materialUsages.material', 'appointment', 'service']);
+        $session->load(['materialUsages.material', 'appointment', 'service', 'coupon']);
 
         return response()->json(new SessionRecordResource($session), 201);
     }
@@ -94,7 +100,7 @@ class SessionRecordController extends Controller
         $file    = PatientFile::where('uuid', $fileUuid)->firstOrFail();
         $session = SessionRecord::where('uuid', $sessionUuid)
             ->where('patient_file_id', $file->id)
-            ->with(['materialUsages.material', 'appointment', 'service'])
+            ->with(['materialUsages.material', 'appointment', 'service', 'coupon'])
             ->firstOrFail();
 
         return response()->json(new SessionRecordResource($session));
@@ -123,7 +129,7 @@ class SessionRecordController extends Controller
         }
 
         $session->update($data);
-        $session->load(['materialUsages.material', 'appointment', 'service']);
+        $session->load(['materialUsages.material', 'appointment', 'service', 'coupon']);
 
         return response()->json(new SessionRecordResource($session));
     }
@@ -138,5 +144,39 @@ class SessionRecordController extends Controller
         $session->delete();
 
         return response()->json(['message' => 'Session deleted']);
+    }
+
+    /**
+     * @return array{0: float, 1: float, 2: ?float, 3: ?int}
+     */
+    private function resolveCouponPricing(StoreSessionRecordRequest $request): array
+    {
+        $submittedFinal = (float) $request->servicePrice;
+        $couponCode     = $request->couponCode ? strtoupper(trim((string) $request->couponCode)) : null;
+
+        if (! $couponCode) {
+            return [$submittedFinal, 0.0, null, null];
+        }
+
+        $coupon = Coupon::where('code', $couponCode)->first();
+        if (! $coupon || ! $coupon->isValidNow()) {
+            abort(422, 'Invalid or expired coupon.');
+        }
+
+        $original = $request->has('originalServicePrice') ? (float) $request->originalServicePrice : null;
+        if ($original === null || $original <= 0) {
+            abort(422, 'Original service price is required when using a coupon.');
+        }
+
+        $discountAmount = $coupon->computeDiscountAmount($original);
+        $final          = round(max(0, $original - $discountAmount), 2);
+
+        if (abs($final - $submittedFinal) > 0.02) {
+            abort(422, 'Final price does not match the coupon discount. Refresh and try again.');
+        }
+
+        $coupon->incrementUsage();
+
+        return [$final, $discountAmount, $original, $coupon->id];
     }
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { X, Mail, Phone, Calendar, FileText } from 'lucide-react';
+import { X, Mail, Phone, Calendar, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { patientService } from '../../lib/services/patientService';
 
 export interface Patient {
   id: string;
@@ -24,7 +25,9 @@ interface PatientDetailModalProps {
 
 export default function PatientDetailModal({ patient, onClose, onSave, onDelete }: PatientDetailModalProps) {
   const isEditing = !!patient;
-  
+
+  const [saving, setSaving] = useState(false);
+
   const [formData, setFormData] = useState<Patient>(
     patient || {
       id: '',
@@ -43,29 +46,62 @@ export default function PatientDetailModal({ patient, onClose, onSave, onDelete 
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.phone || !formData.dateOfBirth) {
       toast.error('Please fill in all required fields');
       return;
     }
 
-    const patientData: Patient = {
-      ...formData,
-      id: formData.id || `p-${Date.now()}`,
-    };
-
-    onSave(patientData);
-    toast.success(isEditing ? 'Patient updated successfully' : 'Patient added successfully');
-    onClose();
+    setSaving(true);
+    try {
+      const body = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        address: formData.address,
+        emergencyContact: formData.emergencyContact,
+        notes: formData.notes,
+      };
+      const saved = isEditing
+        ? await patientService.update(formData.id, body)
+        : await patientService.create(body);
+      const patientData: Patient = {
+        id: saved.id,
+        name: saved.name,
+        email: saved.email,
+        phone: saved.phone,
+        dateOfBirth: saved.dateOfBirth ?? '',
+        lastVisit: saved.lastVisit,
+        totalVisits: saved.totalVisits ?? 0,
+        notes: saved.notes,
+        address: saved.address,
+        emergencyContact: saved.emergencyContact,
+      };
+      onSave(patientData);
+      toast.success(isEditing ? 'Patient updated successfully' : 'Patient added successfully');
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save patient');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = () => {
-    if (patient && onDelete && confirm(`Are you sure you want to delete ${patient.name}?`)) {
+  const handleDelete = async () => {
+    if (!patient || !onDelete || !confirm(`Are you sure you want to delete ${patient.name}?`)) return;
+    setSaving(true);
+    try {
+      await patientService.remove(patient.id);
       onDelete(patient.id);
       toast.success('Patient deleted successfully');
       onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete patient');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -227,8 +263,10 @@ export default function PatientDetailModal({ patient, onClose, onSave, onDelete 
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+                disabled={saving}
+                className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
               >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isEditing ? 'Update' : 'Add'} Patient
               </button>
             </div>

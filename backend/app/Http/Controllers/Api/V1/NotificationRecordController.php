@@ -9,6 +9,8 @@ use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Patient;
 use App\Models\Setting;
+use Ghanem\LaravelSmsmisr\Facades\Smsmisr;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +18,37 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationRecordController extends Controller
 {
+    private const ALLOWED_REMINDER_ROLES = ['admin', 'assistant', 'doctor', 'superadmin'];
+
+    private function smsMisrConfigured(): bool
+    {
+        return ! empty(config('smsmisr.sender'))
+            && (! empty(config('smsmisr.token')) || (! empty(config('smsmisr.username')) && ! empty(config('smsmisr.password'))));
+    }
+
+    private function canSendReminders(Request $request): bool
+    {
+        $role = (string) ($request->user()?->role ?? '');
+        return in_array($role, self::ALLOWED_REMINDER_ROLES, true);
+    }
+
+    /**
+     * Doctors are restricted to their own appointments.
+     * Admin/assistant/superadmin can process clinic-wide reminders.
+     */
+    private function applyRoleScopeToReminderQuery(Builder $query, Request $request): void
+    {
+        if ($request->user()?->role !== 'doctor') {
+            return;
+        }
+        $request->user()->loadMissing('doctor');
+        if ($request->user()->doctor) {
+            $query->where('doctor_id', $request->user()->doctor->id);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = NotificationRecord::with(['patient', 'appointment'])->latest('sent_at');
@@ -54,6 +87,10 @@ class NotificationRecordController extends Controller
      */
     public function pending(): JsonResponse
     {
+        if (! $this->canSendReminders(request())) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $days = (int) Setting::get('reminder_days_before', 1);
         $days = $days < 1 ? 1 : ($days > 14 ? 14 : $days);
 
@@ -63,7 +100,9 @@ class NotificationRecordController extends Controller
         $appointments = Appointment::with(['patient', 'doctor', 'services'])
             ->whereBetween('date', [$dateFrom, $dateTo])
             ->where('status', 'scheduled')
-            ->whereDoesntHave('notifications', fn ($q) => $q->where('type', 'reminder'))
+            ->whereDoesntHave('notifications', fn ($q) => $q->where('type', 'reminder'));
+        $this->applyRoleScopeToReminderQuery($appointments, request());
+        $appointments = $appointments
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
@@ -83,10 +122,14 @@ class NotificationRecordController extends Controller
 
     /**
      * POST /api/v1/notifications/send-reminders
-     * Send reminder (email; SMS/WhatsApp logged) for pending appointments. Optional body: { "appointmentIds": ["uuid", ...] } or all pending.
+     * Send reminder (email + optional SMS via SMSMisr; WhatsApp is currently logged-only).
      */
     public function sendReminders(Request $request): JsonResponse
     {
+        if (! $this->canSendReminders($request)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $days = (int) Setting::get('reminder_days_before', 1);
         $days = $days < 1 ? 1 : ($days > 14 ? 14 : $days);
         $dateFrom = now()->addDay()->toDateString();
@@ -96,6 +139,7 @@ class NotificationRecordController extends Controller
             ->whereBetween('date', [$dateFrom, $dateTo])
             ->where('status', 'scheduled')
             ->whereDoesntHave('notifications', fn ($q) => $q->where('type', 'reminder'));
+        $this->applyRoleScopeToReminderQuery($query, $request);
 
         if ($request->has('appointmentIds') && is_array($request->appointmentIds)) {
             $query->whereIn('uuid', $request->appointmentIds);
@@ -134,8 +178,27 @@ class NotificationRecordController extends Controller
                             $message->to($patient->email)
                                 ->subject('Appointment reminder: ' . $appointment->date->toDateString() . ' at ' . $appointment->start_time);
                         });
-                    } elseif (($method === 'sms' || $method === 'whatsapp') && ! empty($patient->phone)) {
-                        Log::info('Reminder (configure SMS/WhatsApp driver): ' . $method, [
+                    } elseif ($method === 'sms' && ! empty($patient->phone)) {
+                        if (! $this->smsMisrConfigured()) {
+                            $status = 'failed';
+                            Log::warning('SMSMisr is not configured; SMS reminder skipped', [
+                                'patient_id' => $patient->id,
+                                'phone'      => $patient->phone,
+                            ]);
+                        } else {
+                            $response = Smsmisr::send($body, $patient->phone);
+                            if (! $response->isSuccessful()) {
+                                $status = 'failed';
+                                Log::warning('SMSMisr returned failure', [
+                                    'patient_id' => $patient->id,
+                                    'phone'      => $patient->phone,
+                                    'code'       => $response->code,
+                                    'message'    => $response->message,
+                                ]);
+                            }
+                        }
+                    } elseif ($method === 'whatsapp' && ! empty($patient->phone)) {
+                        Log::info('WhatsApp reminder requested (provider not configured yet)', [
                             'patient_id' => $patient->id,
                             'phone'      => $patient->phone,
                             'body'       => $body,

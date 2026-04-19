@@ -32,9 +32,11 @@ export interface User {
   moduleVisibility?: Record<string, boolean>;
 }
 
+export type LoginResult = { ok: true } | { ok: false; error: string };
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   logout: () => void;
   allUsers: SystemUser[];
   updateAllUsers: (users: SystemUser[]) => void;
@@ -93,14 +95,18 @@ function App() {
     else if (role === 'accountant') setCurrentPage('accountant');
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
     try {
       const { user: me } = await authService.login(email, password);
       setUser(me);
       navigateForRole(me.role);
-      return true;
-    } catch {
-      return false;
+      return { ok: true };
+    } catch (e) {
+      const msg =
+        e instanceof Error
+          ? e.message
+          : 'Login failed. Run `npm run dev:all` (API + Vite), or set VITE_API_BASE_URL if using XAMPP.';
+      return { ok: false, error: msg };
     }
   };
 

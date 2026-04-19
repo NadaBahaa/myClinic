@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Upload, Image as ImageIcon, FileText, Plus, Trash2, 
-  DollarSign, Package, TrendingUp, Calendar, Edit2 
+  DollarSign, Package, TrendingUp, Calendar, Edit2, Loader2, Tag
 } from 'lucide-react';
 import { 
   PatientFile, SessionRecord, PatientPhoto, Prescription, 
@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import { patientFileService } from '../../lib/services/patientFileService';
 import { materialService } from '../../lib/services/materialService';
+import { couponService } from '../../lib/services/couponService';
 
 function parseFileDates(file: PatientFile): PatientFile {
   return {
@@ -92,6 +93,12 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
     }
   );
 
+  const [listPrice, setListPrice] = useState(0);
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [discountAmount, setDiscountAmount] = useState(0);
+
   const [materials, setMaterials] = useState<MaterialOrTool[]>([]);
   const [materialsLoading, setMaterialsLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState('');
@@ -113,6 +120,103 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
     if (m) setMaterialUnitPrice(m.unitPrice ?? 0);
   }, [selectedMaterial, materials]);
 
+  useEffect(() => {
+    if (session) {
+      const base = session.originalServicePrice ?? session.servicePrice;
+      setListPrice(base);
+      setCouponInput(session.couponCode ?? '');
+      setAppliedCoupon(session.couponCode ?? null);
+      setDiscountAmount(session.discountAmount ?? 0);
+      setFormData({
+        ...session,
+        date: typeof session.date === 'string' ? new Date(session.date) : session.date,
+      });
+    } else {
+      setListPrice(0);
+      setCouponInput('');
+      setAppliedCoupon(null);
+      setDiscountAmount(0);
+      setFormData({
+        id: '',
+        appointmentId: '',
+        date: new Date(),
+        serviceId: '',
+        serviceName: '',
+        servicePrice: 0,
+        materialsUsed: [],
+        totalMaterialsCost: 0,
+        netProfit: 0,
+        notes: '',
+        performedBy: performedBy || '',
+      });
+    }
+  }, [session, performedBy]);
+
+  const syncNetProfit = (servicePrice: number, materialsUsed: SessionMaterialUsage[]) => {
+    const totalMaterialsCost = materialsUsed.reduce((sum, m) => sum + m.totalPrice, 0);
+    return {
+      totalMaterialsCost,
+      netProfit: Math.round((servicePrice - totalMaterialsCost) * 100) / 100,
+    };
+  };
+
+  const handleListPriceChange = (value: number) => {
+    setListPrice(value);
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    const { totalMaterialsCost, netProfit } = syncNetProfit(value, formData.materialsUsed);
+    setFormData({
+      ...formData,
+      servicePrice: value,
+      totalMaterialsCost,
+      netProfit,
+    });
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) {
+      toast.error('Enter a coupon code');
+      return;
+    }
+    if (listPrice <= 0) {
+      toast.error('Set a list price before applying a coupon');
+      return;
+    }
+    setPreviewLoading(true);
+    try {
+      const res = await couponService.preview(code, listPrice);
+      setAppliedCoupon(res.couponCode);
+      setDiscountAmount(res.discountAmount);
+      const { totalMaterialsCost, netProfit } = syncNetProfit(res.finalPrice, formData.materialsUsed);
+      setFormData((prev) => ({
+        ...prev,
+        servicePrice: res.finalPrice,
+        totalMaterialsCost,
+        netProfit,
+      }));
+      toast.success('Coupon applied');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Invalid coupon');
+      setAppliedCoupon(null);
+      setDiscountAmount(0);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleClearCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    const { totalMaterialsCost, netProfit } = syncNetProfit(listPrice, formData.materialsUsed);
+    setFormData((prev) => ({
+      ...prev,
+      servicePrice: listPrice,
+      totalMaterialsCost,
+      netProfit,
+    }));
+  };
+
   const handleAddMaterial = () => {
     if (!selectedMaterial) return;
     const material = materials.find((m) => m.id === selectedMaterial);
@@ -129,8 +233,7 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
     };
 
     const updatedMaterials = [...formData.materialsUsed, newMaterial];
-    const totalMaterialsCost = updatedMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
-    const netProfit = Math.round((formData.servicePrice - totalMaterialsCost) * 100) / 100;
+    const { totalMaterialsCost, netProfit } = syncNetProfit(formData.servicePrice, updatedMaterials);
 
     setFormData({
       ...formData,
@@ -146,22 +249,12 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
 
   const handleRemoveMaterial = (index: number) => {
     const updatedMaterials = formData.materialsUsed.filter((_, i) => i !== index);
-    const totalMaterialsCost = updatedMaterials.reduce((sum, m) => sum + m.totalPrice, 0);
-    const netProfit = formData.servicePrice - totalMaterialsCost;
+    const { totalMaterialsCost, netProfit } = syncNetProfit(formData.servicePrice, updatedMaterials);
 
     setFormData({
       ...formData,
       materialsUsed: updatedMaterials,
       totalMaterialsCost,
-      netProfit,
-    });
-  };
-
-  const handleServicePriceChange = (price: number) => {
-    const netProfit = price - formData.totalMaterialsCost;
-    setFormData({
-      ...formData,
-      servicePrice: price,
       netProfit,
     });
   };
@@ -173,12 +266,23 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
       return;
     }
 
-    onSave({
+    const out: SessionRecord = {
       ...formData,
       id: formData.id || `session-${Date.now()}`,
-    });
+    };
+
+    if (!isEditing && appliedCoupon) {
+      out.couponCode = appliedCoupon;
+      out.originalServicePrice = listPrice;
+      out.discountAmount = discountAmount;
+    }
+
+    onSave(out);
     onClose();
   };
+
+  const showCouponUi = !isEditing;
+  const couponReadOnly = isEditing && !!(session?.couponCode);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -210,18 +314,58 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
               />
             </div>
             <div>
-              <label className="block mb-2 text-gray-700">Service Price ($) *</label>
+              <label className="block mb-2 text-gray-700">List price ($) *</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.servicePrice}
-                onChange={(e) => handleServicePriceChange(parseFloat(e.target.value) || 0)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                value={listPrice}
+                onChange={(e) => handleListPriceChange(parseFloat(e.target.value) || 0)}
+                disabled={couponReadOnly}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 disabled:bg-gray-100"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Price before any coupon</p>
             </div>
           </div>
+
+          {showCouponUi && (
+            <div className="flex flex-wrap items-end gap-2 p-4 bg-pink-50/80 rounded-lg border border-pink-100">
+              <Tag className="w-5 h-5 text-pink-600 flex-shrink-0 mb-2" />
+              <div className="flex-1 min-w-[140px]">
+                <label className="block mb-1 text-sm text-gray-700">Coupon code</label>
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono uppercase"
+                  placeholder="OPTIONAL"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={previewLoading}
+                className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {previewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Apply
+              </button>
+              {appliedCoupon && (
+                <button type="button" onClick={handleClearCoupon} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+
+          {couponReadOnly && session && (
+            <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-700 space-y-1">
+              <p><span className="text-gray-500">Coupon:</span> <span className="font-mono font-medium">{session.couponCode}</span></p>
+              <p><span className="text-gray-500">Discount:</span> −${(session.discountAmount ?? 0).toFixed(2)}</p>
+              <p><span className="text-gray-500">Amount charged:</span> ${session.servicePrice.toFixed(2)}</p>
+            </div>
+          )}
 
           <div>
             <label className="block mb-2 text-gray-700">Date</label>
@@ -310,8 +454,16 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
 
           {/* Financial Summary */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+            {(appliedCoupon || (couponReadOnly && (session?.discountAmount ?? 0) > 0)) && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Coupon discount:</span>
+                <span className="text-amber-700">
+                  −${(couponReadOnly ? (session?.discountAmount ?? 0) : discountAmount).toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Service Price:</span>
+              <span className="text-gray-600">Amount charged:</span>
               <span className="text-gray-900">${formData.servicePrice.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
@@ -414,7 +566,7 @@ export default function PatientFileView({
 
   const handleSaveSession = async (session: SessionRecord) => {
     if (!patientFile || !fileId) return;
-    const payload = {
+    const payload: Record<string, unknown> = {
       date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
       serviceName: session.serviceName,
       servicePrice: session.servicePrice,
@@ -422,6 +574,10 @@ export default function PatientFileView({
       notes: session.notes ?? '',
       materialsUsed: session.materialsUsed.map((m) => ({ materialId: m.materialId, quantity: m.quantity, unitPrice: m.unitPrice })),
     };
+    if (!selectedSession && session.couponCode && session.originalServicePrice != null) {
+      payload.couponCode = session.couponCode;
+      payload.originalServicePrice = session.originalServicePrice;
+    }
     try {
       if (selectedSession) {
         await patientFileService.updateSession(fileId, selectedSession.id, { notes: payload.notes, date: payload.date, performedBy: payload.performedBy });

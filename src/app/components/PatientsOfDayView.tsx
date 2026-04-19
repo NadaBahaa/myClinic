@@ -3,10 +3,12 @@ import { Calendar, Clock, User, Mail, Send, CheckCircle2, AlertCircle } from 'lu
 import { NotificationRecord } from '../types';
 import type { Appointment } from './CalendarView';
 import { toast } from 'sonner';
+import { notificationService } from '../../lib/services/notificationService';
 
 interface PatientsOfDayViewProps {
   appointments: Appointment[];
   userRole: 'doctor' | 'assistant';
+  /** For doctors: must be the doctor's UUID (same as appointment.doctorId). For assistants: unused (all doctors' appointments). */
   currentUserId: string;
 }
 
@@ -44,12 +46,10 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
       
       const isCorrectDate = aptDate.getTime() === targetDate.getTime();
       
-      // If doctor, only show their appointments
+      // Doctor: own appointments only (currentUserId = doctor UUID). Assistant: all doctors.
       if (userRole === 'doctor') {
-        return isCorrectDate && apt.doctorId === currentUserId;
+        return isCorrectDate && !!currentUserId && apt.doctorId === currentUserId;
       }
-      
-      // If assistant, show all appointments
       return isCorrectDate;
     });
   };
@@ -69,21 +69,36 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
   };
 
   // Send/Resend notification
-  const handleSendNotification = (appointment: Appointment, method: 'email' | 'sms' | 'whatsapp') => {
-    const newNotification: NotificationRecord = {
-      id: `n-${Date.now()}`,
-      patientId: appointment.patientId,
-      patientName: appointment.patientName,
-      appointmentId: appointment.id,
-      type: 'reminder',
-      sentAt: new Date(),
-      sentBy: currentUserId,
-      method,
-      status: 'sent',
-    };
+  const handleSendNotification = async (appointment: Appointment, method: 'email' | 'sms' | 'whatsapp') => {
+    try {
+      const result = await notificationService.sendReminders({
+        appointmentIds: [appointment.id],
+        alsoSms: method === 'sms',
+        alsoWhatsApp: method === 'whatsapp',
+      });
 
-    setNotifications(prev => [...prev, newNotification]);
-    toast.success(`${method.toUpperCase()} notification sent to ${appointment.patientName}`);
+      const status = result.failed > 0 ? 'failed' : 'sent';
+      const newNotification: NotificationRecord = {
+        id: `n-${Date.now()}`,
+        patientId: appointment.patientId,
+        patientName: appointment.patientName,
+        appointmentId: appointment.id,
+        type: 'reminder',
+        sentAt: new Date(),
+        sentBy: currentUserId,
+        method,
+        status,
+      };
+      setNotifications((prev) => [...prev, newNotification]);
+
+      if (result.sent > 0) {
+        toast.success(`${method.toUpperCase()} reminder sent to ${appointment.patientName}`);
+      } else {
+        toast.error(`Failed to send ${method.toUpperCase()} reminder`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to send ${method.toUpperCase()} reminder`);
+    }
   };
 
   const formatTime = (date: Date) => {

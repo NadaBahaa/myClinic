@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CouponController;
 use App\Http\Controllers\Api\V1\DoctorController;
 use App\Http\Controllers\Api\V1\MaterialOrToolController;
 use App\Http\Controllers\Api\V1\NotificationRecordController;
@@ -98,6 +99,17 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('materials-tools', MaterialOrToolController::class)
             ->only(['index', 'show']);
 
+        // Coupon preview (any authenticated user booking a session)
+        Route::post('coupons/preview', [CouponController::class, 'preview']);
+
+        // Coupons CRUD (admin + assistant)
+        Route::middleware('role:admin,assistant')->group(function () {
+            Route::get('coupons', [CouponController::class, 'index']);
+            Route::post('coupons', [CouponController::class, 'store']);
+            Route::put('coupons/{uuid}', [CouponController::class, 'update']);
+            Route::delete('coupons/{uuid}', [CouponController::class, 'destroy']);
+        });
+
         // Appointments — specific routes BEFORE apiResource to avoid capture
         Route::get('appointments/date/{date}',    [AppointmentController::class, 'byDate']);
         Route::get('appointments/doctor/{uuid}',  [AppointmentController::class, 'byDoctor']);
@@ -135,10 +147,10 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:admin,accountant');
 
         // Notifications
-        Route::get('notifications/pending', [NotificationRecordController::class, 'pending']);
+        Route::get('notifications/pending', [NotificationRecordController::class, 'pending'])->middleware('role:admin,assistant,doctor,superadmin');
         Route::get('notifications',         [NotificationRecordController::class, 'index']);
         Route::post('notifications',        [NotificationRecordController::class, 'store']);
-        Route::post('notifications/send-reminders', [NotificationRecordController::class, 'sendReminders']);
+        Route::post('notifications/send-reminders', [NotificationRecordController::class, 'sendReminders'])->middleware('role:admin,assistant,doctor,superadmin');
 
         // Settings (admin/superadmin)
         Route::get('settings',  [SettingsController::class, 'index']);

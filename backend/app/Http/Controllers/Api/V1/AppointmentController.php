@@ -16,14 +16,41 @@ use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
+    /**
+     * Admin, superadmin, assistant, accountant: all appointments (subject to query filters).
+     * Doctor: only appointments for their linked doctor profile.
+     */
+    private function restrictQueryToDoctorIfNeeded(\Illuminate\Database\Eloquent\Builder $query, Request $request): void
+    {
+        if ($request->user()?->role !== 'doctor') {
+            return;
+        }
+        $request->user()->loadMissing('doctor');
+        if ($request->user()->doctor) {
+            $query->where('doctor_id', $request->user()->doctor->id);
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
+    private function doctorOwnsAppointment(Request $request, Appointment $appt): bool
+    {
+        if ($request->user()?->role !== 'doctor') {
+            return true;
+        }
+        $request->user()->loadMissing('doctor');
+        if (! $request->user()->doctor) {
+            return false;
+        }
+
+        return (int) $appt->doctor_id === (int) $request->user()->doctor->id;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = Appointment::with(['patient', 'doctor', 'services']);
 
-        // Doctor: only their own appointments
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor) {
-            $query->where('doctor_id', $request->user()->doctor->id);
-        }
+        $this->restrictQueryToDoctorIfNeeded($query, $request);
 
         if ($date = $request->query('date')) {
             $query->whereDate('date', $date);
@@ -58,6 +85,13 @@ class AppointmentController extends Controller
         $patient = Patient::where('uuid', $request->patientId)->firstOrFail();
         $doctor  = Doctor::where('uuid', $request->doctorId)->firstOrFail();
 
+        if ($request->user()?->role === 'doctor') {
+            $request->user()->loadMissing('doctor');
+            if (! $request->user()->doctor || (int) $request->user()->doctor->id !== (int) $doctor->id) {
+                return response()->json(['message' => 'You may only create appointments for yourself.'], 403);
+            }
+        }
+
         $appointment = Appointment::create([
             'patient_id' => $patient->id,
             'doctor_id'  => $doctor->id,
@@ -90,12 +124,20 @@ class AppointmentController extends Controller
     {
         $appt = Appointment::where('uuid', $uuid)->with(['patient', 'doctor', 'services'])->firstOrFail();
 
+        if (! $this->doctorOwnsAppointment(request(), $appt)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         return response()->json(new AppointmentResource($appt));
     }
 
     public function update(UpdateAppointmentRequest $request, string $uuid): JsonResponse
     {
         $appt = Appointment::where('uuid', $uuid)->with(['patient', 'doctor'])->firstOrFail();
+
+        if (! $this->doctorOwnsAppointment($request, $appt)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
 
         $data = [];
         if ($request->has('date'))      $data['date']       = $request->date;
@@ -133,6 +175,11 @@ class AppointmentController extends Controller
     public function destroy(string $uuid): JsonResponse
     {
         $appt = Appointment::where('uuid', $uuid)->firstOrFail();
+
+        if (! $this->doctorOwnsAppointment(request(), $appt)) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
         $snapshot = $appt->toArray();
         $appt->update(['status' => 'cancelled']);
         $appt->delete(); // soft delete
@@ -144,9 +191,7 @@ class AppointmentController extends Controller
     public function byDate(string $date): JsonResponse
     {
         $query = Appointment::with(['patient', 'doctor', 'services'])->whereDate('date', $date);
-        if (request()->user()?->role === 'doctor' && request()->user()->doctor) {
-            $query->where('doctor_id', request()->user()->doctor->id);
-        }
+        $this->restrictQueryToDoctorIfNeeded($query, request());
         $appts = $query->get();
 
         return response()->json(AppointmentResource::collection($appts));

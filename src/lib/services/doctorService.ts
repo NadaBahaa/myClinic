@@ -1,4 +1,4 @@
-import { apiFetch } from '../api';
+import { apiFetch, unwrapLaravelData } from '../api';
 
 export interface Doctor {
   id: string;
@@ -18,19 +18,24 @@ export interface Doctor {
 
 export const doctorService = {
   async getAll(): Promise<Doctor[]> {
-    return apiFetch<Doctor[]>('/doctors');
+    const raw = await apiFetch<unknown>('/doctors');
+    const list = unwrapLaravelData<Doctor[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async get(uuid: string): Promise<Doctor> {
-    return apiFetch<Doctor>(`/doctors/${uuid}`);
+    const raw = await apiFetch<unknown>(`/doctors/${uuid}`);
+    return unwrapLaravelData<Doctor>(raw);
   },
 
   async create(data: Partial<Doctor>): Promise<Doctor> {
-    return apiFetch<Doctor>('/doctors', { method: 'POST', body: data });
+    const raw = await apiFetch<unknown>('/doctors', { method: 'POST', body: data });
+    return unwrapLaravelData<Doctor>(raw);
   },
 
   async update(uuid: string, data: Partial<Doctor>): Promise<Doctor> {
-    return apiFetch<Doctor>(`/doctors/${uuid}`, { method: 'PUT', body: data });
+    const raw = await apiFetch<unknown>(`/doctors/${uuid}`, { method: 'PUT', body: data });
+    return unwrapLaravelData<Doctor>(raw);
   },
 
   async remove(uuid: string): Promise<void> {

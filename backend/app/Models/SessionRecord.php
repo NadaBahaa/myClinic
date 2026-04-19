@@ -11,15 +11,18 @@ class SessionRecord extends Model
     use SoftDeletes;
     protected $fillable = [
         'uuid', 'patient_file_id', 'appointment_id', 'date',
-        'service_id', 'service_name', 'service_price',
+        'service_id', 'coupon_id', 'service_name', 'service_price',
+        'discount_amount', 'original_service_price',
         'total_materials_cost', 'net_profit', 'performed_by', 'notes',
     ];
 
     protected $casts = [
-        'date'                 => 'date',
-        'service_price'        => 'float',
-        'total_materials_cost' => 'float',
-        'net_profit'           => 'float',
+        'date'                   => 'date',
+        'service_price'          => 'float',
+        'discount_amount'        => 'float',
+        'original_service_price' => 'float',
+        'total_materials_cost'   => 'float',
+        'net_profit'             => 'float',
     ];
 
     protected static function boot(): void
@@ -41,6 +44,11 @@ class SessionRecord extends Model
     public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     public function materialUsages()

@@ -72,6 +72,24 @@ export default function DoctorPortal() {
       return;
     }
     setLoading(true);
+    // Patients of the Day needs today + tomorrow; calendar uses daily/monthly range
+    if (activeTab === "patients-day") {
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split("T")[0];
+      Promise.all([
+        appointmentService.byDate(todayStr),
+        appointmentService.byDate(tomorrowStr),
+      ])
+        .then(([a, b]) =>
+          setAppointments([...a.map(toCalendarAppointment), ...b.map(toCalendarAppointment)]),
+        )
+        .catch(() => toast.error("Failed to load appointments"))
+        .finally(() => setLoading(false));
+      return;
+    }
     if (view === "daily") {
       const dateStr = currentDate.toISOString().split("T")[0];
       appointmentService
@@ -91,7 +109,7 @@ export default function DoctorPortal() {
         .catch(() => toast.error("Failed to load appointments"))
         .finally(() => setLoading(false));
     }
-  }, [currentDate, view, doctorUuid]);
+  }, [currentDate, view, doctorUuid, activeTab]);
 
   useEffect(() => {
     fetchAppointments();
@@ -263,7 +281,7 @@ export default function DoctorPortal() {
           <PatientsOfDayView
             appointments={appointments}
             userRole="doctor"
-            currentUserId={user.id}
+            currentUserId={user.doctorId ?? ""}
           />
         )}
 

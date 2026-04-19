@@ -1,52 +1,42 @@
-import { useState } from 'react';
-import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, FolderOpen } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, FolderOpen, Tag } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAuth } from '../App';
-import CalendarView, { Appointment } from './CalendarView';
+import CalendarView, { Appointment, toCalendarAppointment } from './CalendarView';
 import PatientsView from './PatientsView';
 import DoctorsView from './DoctorsView';
 import ServicesView from './ServicesView';
 import NotificationPanel from './NotificationPanel';
 import PatientsOfDayView from './PatientsOfDayView';
+import CouponsView from './CouponsView';
+import { appointmentService } from '../../lib/services/appointmentService';
 
-type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'patients-day';
-
-// Mock appointments for all doctors
-const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    patientId: 'p1',
-    patientName: 'Emma Wilson',
-    doctorId: '2',
-    doctorName: 'Dr. Sarah Johnson',
-    serviceId: 's1',
-    serviceName: 'Facial Treatment',
-    date: new Date(),
-    startTime: '09:00',
-    endTime: '10:00',
-    duration: 60,
-    status: 'scheduled',
-  },
-  {
-    id: '2',
-    patientId: 'p2',
-    patientName: 'Olivia Brown',
-    doctorId: '3',
-    doctorName: 'Dr. Michael Chen',
-    serviceId: 's2',
-    serviceName: 'Laser Hair Removal',
-    date: new Date(),
-    startTime: '10:30',
-    endTime: '11:30',
-    duration: 60,
-    status: 'scheduled',
-  },
-];
+type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'patients-day';
 
 export default function AssistantPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
   const [showNotifications, setShowNotifications] = useState(false);
-  const [appointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const { user, logout } = useAuth();
+
+  const loadPatientsOfDayAppointments = useCallback(() => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    Promise.all([appointmentService.byDate(todayStr), appointmentService.byDate(tomorrowStr)])
+      .then(([a, b]) =>
+        setAppointments([...a.map(toCalendarAppointment), ...b.map(toCalendarAppointment)]),
+      )
+      .catch(() => toast.error('Failed to load appointments'));
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'patients-day') {
+      loadPatientsOfDayAppointments();
+    }
+  }, [activeTab, loadPatientsOfDayAppointments]);
 
   if (!user) return null;
 
@@ -57,6 +47,7 @@ export default function AssistantPortal() {
     { id: 'patients' as Tab, label: 'All Patients', icon: Users, show: mv.patients !== false && user.permissions.showPatients },
     { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, show: mv.doctors !== false && user.permissions.showDoctors },
     { id: 'services' as Tab, label: 'Services', icon: Sparkles, show: mv.services !== false && user.permissions.showServices },
+    { id: 'coupons' as Tab, label: 'Coupons', icon: Tag, show: mv.services !== false && user.permissions.showServices },
   ];
 
   return (
@@ -131,6 +122,7 @@ export default function AssistantPortal() {
         {activeTab === 'patients' && mv.patients !== false && user.permissions.showPatients && <PatientsView />}
         {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
         {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
+        {activeTab === 'coupons' && mv.services !== false && user.permissions.showServices && <CouponsView />}
 
         {/* Notification Panel */}
         {showNotifications && (

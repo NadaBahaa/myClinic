@@ -22,6 +22,8 @@ class StoreSessionRecordRequest extends FormRequest
             'materialsUsed.*.materialId'    => 'required|exists:materials_tools,uuid',
             'materialsUsed.*.quantity'      => 'required|numeric|min:0.001',
             'materialsUsed.*.unitPrice'     => 'required|numeric|min:0',
+            'couponCode'                      => 'nullable|string|max:64',
+            'originalServicePrice'            => 'nullable|numeric|min:0',
         ];
     }
 }

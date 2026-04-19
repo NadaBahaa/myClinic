@@ -24,10 +24,10 @@ export default function Login({ onBack, onForgotPassword }: LoginProps) {
     }
 
     setLoading(true);
-    const success = await login(email, password);
+    const result = await login(email, password);
     setLoading(false);
-    if (!success) {
-      setError('Invalid email or password');
+    if (!result.ok) {
+      setError(result.error === 'Invalid credentials' ? 'Invalid email or password' : result.error);
     }
   };
 

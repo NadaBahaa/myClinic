@@ -31,7 +31,7 @@ function toTimeHHMM(t: string): string {
   return parts.length >= 2 ? `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}` : t;
 }
 
-function toCalendarAppointment(api: {
+export function toCalendarAppointment(api: {
   id: string;
   patientId: string;
   patientName: string;

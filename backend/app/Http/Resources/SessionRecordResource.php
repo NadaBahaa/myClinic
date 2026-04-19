@@ -20,6 +20,9 @@ class SessionRecordResource extends JsonResource
             'serviceId'           => $this->service?->uuid,
             'serviceName'         => $this->service_name,
             'servicePrice'        => $this->service_price,
+            'discountAmount'      => (float) $this->discount_amount,
+            'originalServicePrice'=> $this->original_service_price !== null ? (float) $this->original_service_price : null,
+            'couponCode'          => $this->whenLoaded('coupon', fn() => $this->coupon?->code),
             'materialsUsed'       => $this->whenLoaded('materialUsages', function () {
                 return $this->materialUsages->map(fn($u) => [
                     'materialId'   => $u->material->uuid ?? null,

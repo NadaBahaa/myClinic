@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "dev:api": "cd backend && php artisan serve --host=127.0.0.1 --port=8001",
+    "dev:all": "concurrently -k -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev\""
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -65,6 +67,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
+    "concurrently": "9.1.2",
     "tailwindcss": "4.1.12",
     "vite": "6.3.5"
   },

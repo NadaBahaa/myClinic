@@ -1,51 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Phone, Mail, Calendar, FolderOpen, X } from 'lucide-react';
+import { Plus, Search, Phone, Mail, Calendar, FolderOpen, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import PatientDetailModal, { Patient } from './PatientDetailModal';
 import PatientFileView from './PatientFileView';
 import { doctorService } from '../../lib/services/doctorService';
-
-const initialPatients: Patient[] = [
-  {
-    id: 'p1',
-    name: 'Emma Wilson',
-    email: 'emma.wilson@email.com',
-    phone: '(555) 123-4567',
-    dateOfBirth: '1990-05-15',
-    lastVisit: '2024-12-20',
-    totalVisits: 8,
-    notes: 'Prefers Dr. Sarah Johnson',
-    address: '123 Main St, New York, NY 10001',
-    emergencyContact: 'John Wilson (555) 123-4568'
-  },
-  {
-    id: 'p2',
-    name: 'Olivia Brown',
-    email: 'olivia.brown@email.com',
-    phone: '(555) 234-5678',
-    dateOfBirth: '1985-08-22',
-    lastVisit: '2024-12-18',
-    totalVisits: 12,
-    address: '456 Oak Ave, Brooklyn, NY 11201',
-  },
-  {
-    id: 'p3',
-    name: 'Sophia Davis',
-    email: 'sophia.davis@email.com',
-    phone: '(555) 345-6789',
-    dateOfBirth: '1992-03-10',
-    lastVisit: '2024-12-15',
-    totalVisits: 5,
-    address: '789 Pine Rd, Queens, NY 11354',
-  },
-  {
-    id: 'p4',
-    name: 'Ava Martinez',
-    email: 'ava.martinez@email.com',
-    phone: '(555) 456-7890',
-    dateOfBirth: '1988-11-30',
-    totalVisits: 3,
-  },
-];
+import { patientService } from '../../lib/services/patientService';
 
 interface PatientsViewProps {
   isDoctorView?: boolean;
@@ -54,7 +13,8 @@ interface PatientsViewProps {
 }
 
 export default function PatientsView({ isDoctorView = false, doctorId = '', doctorName = '' }: PatientsViewProps) {
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patientsLoading, setPatientsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,6 +22,28 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
   const [showDoctorPicker, setShowDoctorPicker] = useState(false);
   const [patientForFile, setPatientForFile] = useState<Patient | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPatientsLoading(true);
+    patientService
+      .getAll()
+      .then((list) => {
+        if (!cancelled) setPatients(list);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error('Failed to load patients');
+          setPatients([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPatientsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isDoctorView]);
 
   useEffect(() => {
     if (!isDoctorView) {
@@ -87,11 +69,9 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
 
   const handleSavePatient = (patient: Patient) => {
     if (selectedPatient) {
-      // Update existing patient
-      setPatients(prev => prev.map(p => p.id === patient.id ? patient : p));
+      setPatients((prev) => prev.map((p) => (p.id === patient.id ? patient : p)));
     } else {
-      // Add new patient
-      setPatients(prev => [...prev, patient]);
+      setPatients((prev) => [...prev, patient]);
     }
   };
 
@@ -150,11 +130,18 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
           placeholder="Search patients by name, email, or phone..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+          disabled={patientsLoading}
+          className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600 disabled:opacity-50"
         />
       </div>
 
-      {/* Patients Grid */}
+      {patientsLoading ? (
+        <div className="flex flex-col items-center justify-center py-16 text-gray-600">
+          <Loader2 className="w-10 h-10 animate-spin text-pink-600 mb-3" />
+          <p>Loading patients...</p>
+        </div>
+      ) : (
+      /* Patients Grid */
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredPatients.map((patient) => (
           <div key={patient.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -206,10 +193,11 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
           </div>
         ))}
       </div>
+      )}
 
-      {filteredPatients.length === 0 && (
+      {!patientsLoading && filteredPatients.length === 0 && (
         <div className="text-center py-12 text-gray-600">
-          No patients found matching your search.
+          {searchQuery ? 'No patients found matching your search.' : 'No patients yet. Add a patient to get started.'}
         </div>
       )}
 

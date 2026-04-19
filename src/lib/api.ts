@@ -1,7 +1,19 @@
 // Core API client with Bearer token auth and 401 handling
-// Set VITE_API_BASE_URL in .env to match your backend (e.g. http://localhost/Beauty%20Clinic%20Management%20App%20(Final-2)/backend/public/api/v1)
+// - Dev: leave VITE_API_BASE_URL empty → Vite proxies `/api/*` to Laravel (see vite.config.ts)
+// - Production / XAMPP: set VITE_API_BASE_URL to full API URL (no trailing slash)
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost/Beauty%20Clinic%20Management%20App%20(Final-2)/backend/public/api/v1';
+function resolveApiBaseUrl(): string {
+  const raw = import.meta.env.VITE_API_BASE_URL;
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw.trim().replace(/\/$/, '');
+  }
+  if (import.meta.env.DEV) {
+    return '/api/v1';
+  }
+  return 'http://localhost/Beauty%20Clinic%20Management%20App%20(Final-2)/backend/public/api/v1';
+}
+
+const BASE_URL = resolveApiBaseUrl();
 
 const TOKEN_KEY = 'beauty_clinic_token';
 
@@ -22,6 +34,15 @@ type RequestOptions = {
   body?: unknown;
   headers?: Record<string, string>;
 };
+
+/** Laravel `JsonResource` responses are shaped as `{ data: T }` (single model, collection, or paginator). */
+export function unwrapLaravelData<T>(json: unknown): T {
+  if (json !== null && typeof json === 'object' && 'data' in json) {
+    const inner = (json as { data: unknown }).data;
+    if (inner !== undefined) return inner as T;
+  }
+  return json as T;
+}
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = getToken();
@@ -116,5 +137,5 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
     throw new Error(data?.message ?? `HTTP ${response.status}`);
   }
 
-  return data as T;
+  return unwrapLaravelData<T>(data);
 }

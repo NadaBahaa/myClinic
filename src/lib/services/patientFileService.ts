@@ -1,33 +1,40 @@
-import { apiFetch, apiUpload } from '../api';
+import { apiFetch, apiUpload, unwrapLaravelData } from '../api';
 import type { PatientFile, SessionRecord, PatientPhoto, Prescription } from '../../app/types/index';
 
 export const patientFileService = {
   // Patient Files
   async getFiles(patientUuid: string): Promise<PatientFile[]> {
-    return apiFetch<PatientFile[]>(`/patients/${patientUuid}/files`);
+    const raw = await apiFetch<unknown>(`/patients/${patientUuid}/files`);
+    const list = unwrapLaravelData<PatientFile[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async getFile(patientUuid: string, doctorUuid: string): Promise<PatientFile> {
-    return apiFetch<PatientFile>(`/patients/${patientUuid}/files/${doctorUuid}`);
+    const raw = await apiFetch<unknown>(`/patients/${patientUuid}/files/${doctorUuid}`);
+    return unwrapLaravelData<PatientFile>(raw);
   },
 
   // Sessions
   async getSessions(fileUuid: string): Promise<SessionRecord[]> {
-    return apiFetch<SessionRecord[]>(`/patient-files/${fileUuid}/sessions`);
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/sessions`);
+    const list = unwrapLaravelData<SessionRecord[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async createSession(fileUuid: string, data: Partial<SessionRecord>): Promise<SessionRecord> {
-    return apiFetch<SessionRecord>(`/patient-files/${fileUuid}/sessions`, {
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/sessions`, {
       method: 'POST',
       body: data,
     });
+    return unwrapLaravelData<SessionRecord>(raw);
   },
 
   async updateSession(fileUuid: string, sessionUuid: string, data: Partial<SessionRecord>): Promise<SessionRecord> {
-    return apiFetch<SessionRecord>(`/patient-files/${fileUuid}/sessions/${sessionUuid}`, {
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/sessions/${sessionUuid}`, {
       method: 'PUT',
       body: data,
     });
+    return unwrapLaravelData<SessionRecord>(raw);
   },
 
   async deleteSession(fileUuid: string, sessionUuid: string): Promise<void> {
@@ -36,7 +43,9 @@ export const patientFileService = {
 
   // Photos
   async getPhotos(fileUuid: string): Promise<PatientPhoto[]> {
-    return apiFetch<PatientPhoto[]>(`/patient-files/${fileUuid}/photos`);
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/photos`);
+    const list = unwrapLaravelData<PatientPhoto[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async uploadPhoto(fileUuid: string, photo: File, type: string, notes?: string, sessionId?: string): Promise<PatientPhoto> {
@@ -54,21 +63,25 @@ export const patientFileService = {
 
   // Prescriptions
   async getPrescriptions(fileUuid: string): Promise<Prescription[]> {
-    return apiFetch<Prescription[]>(`/patient-files/${fileUuid}/prescriptions`);
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/prescriptions`);
+    const list = unwrapLaravelData<Prescription[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async createPrescription(fileUuid: string, data: Partial<Prescription>): Promise<Prescription> {
-    return apiFetch<Prescription>(`/patient-files/${fileUuid}/prescriptions`, {
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/prescriptions`, {
       method: 'POST',
       body: data,
     });
+    return unwrapLaravelData<Prescription>(raw);
   },
 
   async updatePrescription(fileUuid: string, rxUuid: string, data: Partial<Prescription>): Promise<Prescription> {
-    return apiFetch<Prescription>(`/patient-files/${fileUuid}/prescriptions/${rxUuid}`, {
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/prescriptions/${rxUuid}`, {
       method: 'PUT',
       body: data,
     });
+    return unwrapLaravelData<Prescription>(raw);
   },
 
   async deletePrescription(fileUuid: string, rxUuid: string): Promise<void> {
@@ -77,8 +90,9 @@ export const patientFileService = {
 
   // Attachments (any file type; stored in patient file and DB)
   async getAttachments(fileUuid: string): Promise<{ id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[]> {
-    const res = await apiFetch<{ data: { id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[] }>(`/patient-files/${fileUuid}/attachments`);
-    return res.data;
+    const raw = await apiFetch<unknown>(`/patient-files/${fileUuid}/attachments`);
+    const list = unwrapLaravelData<{ id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
   async uploadAttachment(fileUuid: string, file: File, name?: string, sessionId?: string): Promise<{ id: string; name: string; path: string; createdAt: string }> {
     const form = new FormData();

@@ -24,7 +24,7 @@ class PatientFileController extends Controller
         if ($request->user()?->role === 'doctor' && $request->user()->doctor) {
             $query->where('doctor_id', $request->user()->doctor->id);
         }
-        $files = $query->with(['patient', 'doctor', 'sessions.materialUsages.material', 'photos', 'prescriptions'])->get();
+        $files = $query->with(['patient', 'doctor', 'sessions.materialUsages.material', 'sessions.coupon', 'photos', 'prescriptions'])->get();
 
         return response()->json(PatientFileResource::collection($files));
     }
@@ -43,7 +43,7 @@ class PatientFileController extends Controller
         }
 
         $file = PatientFile::getOrCreate($patient->id, $doctor->id);
-        $file->load(['patient', 'doctor', 'sessions.materialUsages.material', 'photos.session', 'prescriptions']);
+        $file->load(['patient', 'doctor', 'sessions.materialUsages.material', 'sessions.coupon', 'photos.session', 'prescriptions']);
 
         return response()->json(new PatientFileResource($file));
     }

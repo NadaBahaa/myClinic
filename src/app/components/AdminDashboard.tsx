@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Users, UserCog, Sparkles, LogOut, Settings, Bell, Shield, Briefcase, Package, History, BarChart3 } from 'lucide-react';
+import { Calendar, Users, UserCog, Sparkles, LogOut, Settings, Bell, Shield, Briefcase, Package, History, BarChart3, Tag } from 'lucide-react';
 import { useAuth } from '../App';
 import CalendarView from './CalendarView';
 import PatientsView from './PatientsView';
@@ -12,8 +12,9 @@ import PractitionerTypesView from './PractitionerTypesView';
 import MaterialsToolsView from './MaterialsToolsView';
 import BacklogView from './BacklogView';
 import AccountantDashboard from './AccountantDashboard';
+import CouponsView from './CouponsView';
 
-type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports';
+type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
     { id: 'patients' as Tab, label: 'Patients', icon: Users, moduleKey: 'patients', show: mv.patients !== false && user.permissions.showPatients },
     { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, moduleKey: 'doctors', show: mv.doctors !== false && user.permissions.showDoctors },
     { id: 'services' as Tab, label: 'Services', icon: Sparkles, moduleKey: 'services', show: mv.services !== false && user.permissions.showServices },
+    { id: 'coupons' as Tab, label: 'Coupons', icon: Tag, moduleKey: 'services', show: mv.services !== false && user.permissions.showServices },
     { id: 'materials-tools' as Tab, label: 'Materials & Tools', icon: Package, moduleKey: 'materials_tools', show: mv.materials_tools !== false && user.permissions.showMaterialsTools },
     { id: 'practitioner-types' as Tab, label: 'Practitioner Types', icon: Briefcase, moduleKey: 'practitioner_types', show: mv.practitioner_types !== false && user.permissions.showPractitionerTypes },
     { id: 'users' as Tab, label: 'Users', icon: Shield, moduleKey: 'users', show: mv.users !== false && user.permissions.showUsers },
@@ -102,6 +104,7 @@ export default function AdminDashboard() {
         {activeTab === 'patients' && mv.patients !== false && user.permissions.showPatients && <PatientsView />}
         {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
         {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
+        {activeTab === 'coupons' && mv.services !== false && user.permissions.showServices && <CouponsView />}
         {activeTab === 'materials-tools' && mv.materials_tools !== false && user.permissions.showMaterialsTools && <MaterialsToolsView />}
         {activeTab === 'practitioner-types' && mv.practitioner_types !== false && user.permissions.showPractitionerTypes && <PractitionerTypesView />}
         {activeTab === 'users' && mv.users !== false && user.permissions.showUsers && <UsersView onUsersUpdate={updateAllUsers} />}

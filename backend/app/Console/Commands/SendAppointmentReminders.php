@@ -5,15 +5,22 @@ namespace App\Console\Commands;
 use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Setting;
+use Ghanem\LaravelSmsmisr\Facades\Smsmisr;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendAppointmentReminders extends Command
 {
-    protected $signature = 'reminders:send';
+    protected $signature = 'reminders:send {--sms : Also send SMS reminders via SMSMisr}';
 
-    protected $description = 'Send appointment reminders (email) for appointments 1 to N days ahead (N = reminder_days_before setting).';
+    protected $description = 'Send appointment reminders (email, optional SMS) for appointments 1 to N days ahead.';
+
+    private function smsMisrConfigured(): bool
+    {
+        return ! empty(config('smsmisr.sender'))
+            && (! empty(config('smsmisr.token')) || (! empty(config('smsmisr.username')) && ! empty(config('smsmisr.password'))));
+    }
 
     public function handle(): int
     {
@@ -43,7 +50,7 @@ class SendAppointmentReminders extends Command
                 . ($appointment->notes ? "Notes: {$appointment->notes}\n" : '')
                 . "\nPlease confirm or reschedule if needed.";
 
-            $status = 'sent';
+            $emailStatus = 'sent';
             try {
                 if (! empty($patient->email)) {
                     Mail::raw($body, function ($message) use ($patient, $appointment) {
@@ -51,18 +58,13 @@ class SendAppointmentReminders extends Command
                             ->subject('Appointment reminder: ' . $appointment->date->toDateString() . ' at ' . $appointment->start_time);
                     });
                 } else {
-                    $status = 'failed';
+                    $emailStatus = 'failed';
                 }
             } catch (\Throwable $e) {
-                $status = 'failed';
-                Log::warning('Reminder send failed', ['patient' => $patient->id, 'error' => $e->getMessage()]);
+                $emailStatus = 'failed';
+                Log::warning('Reminder email send failed', ['patient' => $patient->id, 'error' => $e->getMessage()]);
             }
 
-            if ($status === 'sent') {
-                $sent++;
-            } else {
-                $failed++;
-            }
             NotificationRecord::create([
                 'patient_id'     => $patient->id,
                 'appointment_id' => $appointment->id,
@@ -70,8 +72,51 @@ class SendAppointmentReminders extends Command
                 'sent_at'        => now(),
                 'sent_by'        => 'Scheduled job',
                 'method'         => 'email',
-                'status'         => $status,
+                'status'         => $emailStatus,
             ]);
+            if ($emailStatus === 'sent') {
+                $sent++;
+            } else {
+                $failed++;
+            }
+
+            if ($this->option('sms') && ! empty($patient->phone)) {
+                $smsStatus = 'sent';
+                try {
+                    if (! $this->smsMisrConfigured()) {
+                        $smsStatus = 'failed';
+                        Log::warning('SMSMisr is not configured; SMS reminder skipped', ['patient' => $patient->id]);
+                    } else {
+                        $response = Smsmisr::send($body, $patient->phone);
+                        if (! $response->isSuccessful()) {
+                            $smsStatus = 'failed';
+                            Log::warning('SMSMisr returned failure', [
+                                'patient' => $patient->id,
+                                'code'    => $response->code,
+                                'message' => $response->message,
+                            ]);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $smsStatus = 'failed';
+                    Log::warning('Reminder SMS send failed', ['patient' => $patient->id, 'error' => $e->getMessage()]);
+                }
+
+                NotificationRecord::create([
+                    'patient_id'     => $patient->id,
+                    'appointment_id' => $appointment->id,
+                    'type'           => 'reminder',
+                    'sent_at'        => now(),
+                    'sent_by'        => 'Scheduled job',
+                    'method'         => 'sms',
+                    'status'         => $smsStatus,
+                ]);
+                if ($smsStatus === 'sent') {
+                    $sent++;
+                } else {
+                    $failed++;
+                }
+            }
         }
 
         $this->info("Reminders: {$sent} sent, {$failed} failed, {$appointments->count()} total.");
