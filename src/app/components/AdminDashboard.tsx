@@ -13,8 +13,9 @@ import MaterialsToolsView from './MaterialsToolsView';
 import BacklogView from './BacklogView';
 import AccountantDashboard from './AccountantDashboard';
 import CouponsView from './CouponsView';
+import AdminNotificationsView from './AdminNotificationsView';
 
-type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports';
+type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports' | 'notifications';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
@@ -35,6 +36,7 @@ export default function AdminDashboard() {
     { id: 'users' as Tab, label: 'Users', icon: Shield, moduleKey: 'users', show: mv.users !== false && user.permissions.showUsers },
     { id: 'backlog' as Tab, label: 'Activity Log', icon: History, moduleKey: 'activity_log', show: mv.activity_log !== false && user.permissions.showActivityLog },
     { id: 'reports' as Tab, label: 'Sales & Export', icon: BarChart3, moduleKey: 'reports', show: mv.reports !== false && user.permissions.showReports },
+    { id: 'notifications' as Tab, label: 'Notifications', icon: Bell, moduleKey: 'notifications', show: true },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings, moduleKey: 'settings', show: mv.settings !== false && user.permissions.showSettings },
   ];
 
@@ -110,6 +112,13 @@ export default function AdminDashboard() {
         {activeTab === 'users' && mv.users !== false && user.permissions.showUsers && <UsersView onUsersUpdate={updateAllUsers} />}
         {activeTab === 'backlog' && mv.activity_log !== false && user.permissions.showActivityLog && <BacklogView />}
         {activeTab === 'reports' && mv.reports !== false && user.permissions.showReports && <AccountantDashboard embedded />}
+        {activeTab === 'notifications' && (
+          <div className="p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Patient Notifications</h2>
+            <p className="text-sm text-gray-500 mb-6">View per-patient notification counts, sent messages, and send reminders to upcoming appointments.</p>
+            <AdminNotificationsView />
+          </div>
+        )}
         {activeTab === 'settings' && mv.settings !== false && user.permissions.showSettings && <SettingsView />}
 
         {/* Notification Panel */}

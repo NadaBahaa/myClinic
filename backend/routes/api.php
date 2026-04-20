@@ -141,15 +141,18 @@ Route::prefix('v1')->group(function () {
         });
 
         // Reports (admin + accountant)
-        Route::get('reports/sessions', [ReportsController::class, 'sessions'])
-            ->middleware('role:admin,accountant');
-        Route::get('reports/sessions/export', [ReportsController::class, 'exportSessions'])
-            ->middleware('role:admin,accountant');
+        Route::middleware('role:admin,accountant')->group(function () {
+            Route::get('reports/sessions',          [ReportsController::class, 'sessions']);
+            Route::get('reports/sessions/export',   [ReportsController::class, 'exportSessions']);
+            Route::get('reports/financial',         [ReportsController::class, 'financial']);
+            Route::get('reports/financial/export',  [ReportsController::class, 'exportFinancial']);
+        });
 
         // Notifications
-        Route::get('notifications/pending', [NotificationRecordController::class, 'pending'])->middleware('role:admin,assistant,doctor,superadmin');
-        Route::get('notifications',         [NotificationRecordController::class, 'index']);
-        Route::post('notifications',        [NotificationRecordController::class, 'store']);
+        Route::get('notifications/pending',        [NotificationRecordController::class, 'pending'])->middleware('role:admin,assistant,doctor,superadmin');
+        Route::get('notifications/patient-counts', [NotificationRecordController::class, 'patientCounts'])->middleware('role:admin,superadmin');
+        Route::get('notifications',                [NotificationRecordController::class, 'index']);
+        Route::post('notifications',               [NotificationRecordController::class, 'store']);
         Route::post('notifications/send-reminders', [NotificationRecordController::class, 'sendReminders'])->middleware('role:admin,assistant,doctor,superadmin');
 
         // Settings (admin/superadmin)

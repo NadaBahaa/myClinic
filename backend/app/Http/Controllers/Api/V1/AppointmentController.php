@@ -10,6 +10,7 @@ use App\Models\ActivityLog;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
+use App\Models\PatientFile;
 use App\Models\Service;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -107,6 +108,9 @@ class AppointmentController extends Controller
         $services = Service::whereIn('uuid', $request->services)->get();
         $syncData = $services->mapWithKeys(fn($s) => [$s->id => ['service_name' => $s->name]]);
         $appointment->services()->sync($syncData);
+
+        // Auto-create a patient file for this patient-doctor pair (idempotent)
+        PatientFile::getOrCreate($patient->id, $doctor->id);
 
         // Increment patient's visit count if completing an appointment
         if (($request->status ?? 'scheduled') === 'completed') {

@@ -8,6 +8,16 @@ import { usePractitionerTypes } from '../contexts/PractitionerTypeContext';
 export default function PractitionerTypesOverview() {
   const { practitionerTypes } = usePractitionerTypes();
 
+  const toArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      return trimmed.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
   const getPermissionCount = (permissions: Record<string, boolean>) => {
     return Object.values(permissions).filter(Boolean).length;
   };
@@ -167,7 +177,7 @@ export default function PractitionerTypesOverview() {
                       Allowed Service Categories
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {type.allowedServiceCategories.map((cat) => (
+                      {toArray((type as unknown as Record<string, unknown>).allowedServiceCategories).map((cat) => (
                         <span
                           key={cat}
                           className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"

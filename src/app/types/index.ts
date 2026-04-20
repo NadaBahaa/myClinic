@@ -5,7 +5,7 @@ export interface MaterialOrTool {
   name: string;
   type: 'material' | 'tool';
   unitPrice: number;
-  unit: string; // e.g., 'ml', 'piece', 'gram'
+  unit: string;
   stockQuantity?: number;
   supplier?: string;
   notes?: string;
@@ -34,21 +34,22 @@ export interface PatientFile {
 export interface SessionRecord {
   id: string;
   appointmentId: string;
+  /** Date of the appointment that this session is linked to */
+  appointmentDate?: string;
+  /** Start time of the linked appointment */
+  appointmentTime?: string;
   date: Date;
   serviceId: string;
   serviceName: string;
   servicePrice: number;
-  /** Amount discounted when a coupon was applied (session create). */
   discountAmount?: number;
-  /** List price before coupon; null if no coupon. */
   originalServicePrice?: number | null;
-  /** Coupon code when a discount was applied. */
   couponCode?: string | null;
   materialsUsed: SessionMaterialUsage[];
   totalMaterialsCost: number;
   netProfit: number;
   notes?: string;
-  performedBy: string; // doctor/assistant who performed
+  performedBy: string;
 }
 
 export interface Coupon {
@@ -81,7 +82,7 @@ export interface Prescription {
   dosage?: string;
   frequency?: string;
   duration?: string;
-  url?: string; // for uploaded prescription files
+  url?: string;
   prescribedAt: Date;
   prescribedBy: string;
   notes?: string;
@@ -91,10 +92,66 @@ export interface NotificationRecord {
   id: string;
   patientId: string;
   patientName: string;
+  patientEmail?: string;
+  patientPhone?: string;
   appointmentId: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
   type: 'reminder' | 'confirmation';
   sentAt: Date;
   sentBy: string;
   method: 'email' | 'sms' | 'whatsapp';
   status: 'sent' | 'failed';
+  message?: string;
+}
+
+export interface PatientNotificationCount {
+  patientId: string;
+  patientName: string;
+  patientEmail?: string;
+  patientPhone?: string;
+  count: number;
+  lastSentAt: string;
+  lastMessage?: string;
+  lastSentBy?: string;
+  lastMethod?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
+}
+
+export interface FinancialSummary {
+  total_revenue: number;
+  total_discounts: number;
+  net_revenue: number;
+  total_materials_cost: number;
+  net_profit: number;
+  session_count: number;
+  avg_session_value: number;
+}
+
+export interface FinancialByDoctor {
+  doctor: string;
+  sessions: number;
+  revenue: number;
+  discounts: number;
+  materials: number;
+  net_profit: number;
+}
+
+export interface FinancialByService {
+  service: string;
+  sessions: number;
+  revenue: number;
+  discounts: number;
+  materials: number;
+  net_profit: number;
+}
+
+export interface FinancialMonthlyTrend {
+  month: string;
+  sessions: number;
+  revenue: number;
+  discounts: number;
+  materials: number;
+  net_profit: number;
 }

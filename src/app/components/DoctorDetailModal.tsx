@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Mail, Phone, Briefcase, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Phone, Briefcase, Calendar, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePractitionerTypes } from '../contexts/PractitionerTypeContext';
 
@@ -9,17 +9,20 @@ export interface Doctor {
   email: string;
   phone: string;
   specialty: string;
-  practitionerTypeId?: string; // New field for linking to practitioner type
+  practitionerTypeId?: string;
+  practitionerTypeName?: string;
   experience: number;
   availability: string[];
   totalPatients: number;
   qualifications?: string;
   licenseNumber?: string;
-  customPermissions?: Record<string, boolean>; // Override permissions from practitioner type
+  customPermissions?: Record<string, boolean>;
+  services?: { id: string; name: string; duration: number; price?: number; category?: string }[];
 }
 
 interface DoctorDetailModalProps {
   doctor: Doctor | null;
+  availableServices?: { id: string; name: string; duration: number; price?: number; category?: string }[];
   onClose: () => void;
   onSave: (doctor: Doctor) => void | Promise<void>;
   onDelete?: (id: string) => void;
@@ -27,7 +30,7 @@ interface DoctorDetailModalProps {
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }: DoctorDetailModalProps) {
+export default function DoctorDetailModal({ doctor, availableServices = [], onClose, onSave, onDelete }: DoctorDetailModalProps) {
   const isEditing = !!doctor;
   const { getActivePractitionerTypes, getPractitionerTypeById, refetch } = usePractitionerTypes();
   const activePractitionerTypes = getActivePractitionerTypes();
@@ -50,6 +53,7 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
       totalPatients: 0,
       qualifications: '',
       licenseNumber: '',
+      services: [],
     }
   );
 
@@ -66,6 +70,32 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
 
   const handleChange = (field: keyof Doctor, value: string | number | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const selectedServiceIds = new Set((formData.services ?? []).map((s) => s.id));
+  const selectableServices = availableServices.filter((service) => {
+    if (!formData.practitionerTypeId || allowedCategories.length === 0) return true;
+    return !!service.category && allowedCategories.includes(service.category);
+  });
+
+  useEffect(() => {
+    if (!formData.practitionerTypeId || allowedCategories.length === 0) return;
+    setFormData((prev) => ({
+      ...prev,
+      services: (prev.services ?? []).filter((s) => !s.category || allowedCategories.includes(s.category)),
+    }));
+  }, [formData.practitionerTypeId, selectedPractitionerType?.id]);
+
+  const toggleService = (service: { id: string; name: string; duration: number; price?: number; category?: string }) => {
+    setFormData((prev) => {
+      const has = (prev.services ?? []).some((s) => s.id === service.id);
+      return {
+        ...prev,
+        services: has
+          ? (prev.services ?? []).filter((s) => s.id !== service.id)
+          : [...(prev.services ?? []), service],
+      };
+    });
   };
 
   const toggleDay = (day: string) => {
@@ -248,6 +278,67 @@ export default function DoctorDetailModal({ doctor, onClose, onSave, onDelete }:
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Linked Services */}
+          <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+            <h3 className="text-lg text-gray-900 mb-3 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-green-600" />
+              Linked Services ({formData.services?.length ?? 0})
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Select services this doctor can perform. If a practitioner type is selected, only compatible categories are shown.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+              {selectableServices.map((service) => (
+                <label key={service.id} className="flex items-start gap-2 p-2 bg-white border border-green-200 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedServiceIds.has(service.id)}
+                    onChange={() => toggleService(service)}
+                    className="mt-1 rounded border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {service.duration} min{service.category ? ` · ${service.category}` : ''}
+                      {service.price != null ? ` · EGP ${service.price}` : ''}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {selectableServices.length === 0 && (
+              <p className="text-sm text-gray-500">No services available for the selected practitioner type.</p>
+            )}
+          </div>
+
+          {formData.services && formData.services.length > 0 && (
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+              <h3 className="text-lg text-gray-900 mb-3 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-green-600" />
+                Linked Services ({formData.services.length})
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                These services are available for this doctor based on their practitioner type.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {formData.services.map(service => (
+                  <div key={service.id} className="flex items-center justify-between p-2 bg-white border border-green-200 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{service.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {service.duration} min
+                        {service.category ? ` · ${service.category}` : ''}
+                      </p>
+                    </div>
+                    {service.price != null && (
+                      <span className="text-sm font-semibold text-green-700">EGP {service.price}</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

@@ -10,6 +10,7 @@ import NotificationPanel from './NotificationPanel';
 import PatientsOfDayView from './PatientsOfDayView';
 import CouponsView from './CouponsView';
 import { appointmentService } from '../../lib/services/appointmentService';
+import { formatLocalDateYYYYMMDD } from '../../lib/date';
 
 type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'patients-day';
 
@@ -21,10 +22,10 @@ export default function AssistantPortal() {
 
   const loadPatientsOfDayAppointments = useCallback(() => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = formatLocalDateYYYYMMDD(today);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowStr = formatLocalDateYYYYMMDD(tomorrow);
     Promise.all([appointmentService.byDate(todayStr), appointmentService.byDate(tomorrowStr)])
       .then(([a, b]) =>
         setAppointments([...a.map(toCalendarAppointment), ...b.map(toCalendarAppointment)]),

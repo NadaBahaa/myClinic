@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import DoctorDetailModal, { Doctor } from './DoctorDetailModal';
 import { usePractitionerTypes } from '../contexts/PractitionerTypeContext';
 import { doctorService } from '../../lib/services/doctorService';
+import { serviceService, type ClinicService } from '../../lib/services/serviceService';
 
 function toDoctor(d: Awaited<ReturnType<typeof doctorService.get>>): Doctor {
   return {
@@ -13,11 +14,14 @@ function toDoctor(d: Awaited<ReturnType<typeof doctorService.get>>): Doctor {
     phone: d.phone ?? '',
     specialty: d.specialty ?? '',
     practitionerTypeId: d.practitionerTypeId,
+    practitionerTypeName: d.practitionerTypeName,
     experience: d.experience ?? 0,
     availability: Array.isArray(d.availability) ? d.availability as string[] : [],
     totalPatients: d.totalPatients ?? 0,
     qualifications: d.qualifications,
     licenseNumber: d.licenseNumber,
+    services: d.services,
+    serviceIds: (d.services ?? []).map((s) => s.id),
   };
 }
 
@@ -27,6 +31,7 @@ export default function DoctorsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [allServices, setAllServices] = useState<ClinicService[]>([]);
   const { getPractitionerTypeById } = usePractitionerTypes();
 
   useEffect(() => {
@@ -34,6 +39,7 @@ export default function DoctorsView() {
       .then((list) => setDoctors(list.map(toDoctor)))
       .catch(() => toast.error('Failed to load doctors'))
       .finally(() => setLoading(false));
+    serviceService.getAll().then(setAllServices).catch(() => {});
   }, []);
 
   const filteredDoctors = doctors.filter((doctor) =>
@@ -65,6 +71,7 @@ export default function DoctorsView() {
           availability: doctor.availability,
           qualifications: doctor.qualifications,
           licenseNumber: doctor.licenseNumber,
+          serviceIds: doctor.serviceIds ?? doctor.services?.map((s) => s.id) ?? [],
         });
         setDoctors(prev => prev.map(d => d.id === doctor.id ? doctor : d));
         toast.success('Doctor updated successfully');
@@ -79,6 +86,7 @@ export default function DoctorsView() {
           availability: doctor.availability,
           qualifications: doctor.qualifications,
           licenseNumber: doctor.licenseNumber,
+          serviceIds: doctor.serviceIds ?? doctor.services?.map((s) => s.id) ?? [],
         });
         setDoctors(prev => [...prev, toDoctor(created as Awaited<ReturnType<typeof doctorService.get>>)]);
         toast.success('Doctor added successfully');
@@ -204,6 +212,7 @@ export default function DoctorsView() {
       {isModalOpen && (
         <DoctorDetailModal
           doctor={selectedDoctor}
+          availableServices={allServices}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveDoctor}
           onDelete={handleDeleteDoctor}

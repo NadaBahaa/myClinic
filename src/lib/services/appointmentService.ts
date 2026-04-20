@@ -41,6 +41,34 @@ function invalidateCache(): void {
 export const appointmentService = {
   _invalidateCache: invalidateCache,
 
+  async search(params: {
+    date?: string;
+    status?: string;
+    doctor?: string;
+    patient?: string;
+    date_from?: string;
+    date_to?: string;
+  }): Promise<Appointment[]> {
+    const qs = new URLSearchParams();
+    if (params.date) qs.set('date', params.date);
+    if (params.status) qs.set('status', params.status);
+    if (params.doctor) qs.set('doctor', params.doctor);
+    if (params.patient) qs.set('patient', params.patient);
+    if (params.date_from) qs.set('date_from', params.date_from);
+    if (params.date_to) qs.set('date_to', params.date_to);
+
+    const key = `search:${qs.toString()}`;
+    try {
+      const data = await apiFetch<Appointment[]>(`/appointments?${qs.toString()}`);
+      setCache(key, data);
+      return data;
+    } catch {
+      const cached = getCached(key);
+      if (cached) return cached;
+      throw new Error('Failed to load appointments');
+    }
+  },
+
   async getAll(): Promise<Appointment[]> {
     const key = 'all';
     try {

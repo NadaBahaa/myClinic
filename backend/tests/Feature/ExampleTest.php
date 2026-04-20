@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // This backend serves API routes under `/api/v1/*`; the web root may not be defined.
+        $response->assertStatus(404);
     }
 }

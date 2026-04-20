@@ -25,11 +25,33 @@ export type { PractitionerType };
 export function PractitionerTypeProvider({ children }: { children: ReactNode }) {
   const [practitionerTypes, setPractitionerTypes] = useState<PractitionerType[]>([]);
 
+  const normalizeStringArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map((v) => String(v)).filter(Boolean);
+      } catch {
+        // fall back to comma-separated strings
+      }
+      return trimmed.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const normalizeType = (type: PractitionerType): PractitionerType => ({
+    ...type,
+    requiredCertifications: normalizeStringArray((type as unknown as Record<string, unknown>).requiredCertifications),
+    allowedServiceCategories: normalizeStringArray((type as unknown as Record<string, unknown>).allowedServiceCategories),
+  });
+
   // Load from API whenever a token is available
   const loadFromApi = () => {
     if (!getToken()) return;
     practitionerTypeService.getAll()
-      .then(types => setPractitionerTypes(types))
+      .then(types => setPractitionerTypes(types.map(normalizeType)))
       .catch(() => {/* silently keep existing data */});
   };
 
@@ -43,7 +65,7 @@ export function PractitionerTypeProvider({ children }: { children: ReactNode }) 
   }, []);
 
   const updatePractitionerTypes = (types: PractitionerType[]) => {
-    setPractitionerTypes(types);
+    setPractitionerTypes(types.map(normalizeType));
   };
 
   const getPractitionerTypeById = (id: string) => {

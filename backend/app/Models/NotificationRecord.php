@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class NotificationRecord extends Model
 {
     protected $fillable = [
-        'uuid', 'patient_id', 'appointment_id', 'type', 'sent_at', 'sent_by', 'method', 'status',
+        'uuid', 'patient_id', 'appointment_id', 'type', 'sent_at', 'sent_by', 'method', 'status', 'message',
     ];
 
     protected $casts = [

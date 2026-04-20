@@ -8,15 +8,31 @@ use App\Http\Requests\Doctor\UpdateDoctorRequest;
 use App\Http\Resources\DoctorResource;
 use App\Models\Doctor;
 use App\Models\PractitionerType;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class DoctorController extends Controller
 {
+    private function canUseDoctorServicePivot(): bool
+    {
+        return Schema::hasTable('doctor_service');
+    }
+
+    private function doctorWithRelations(): array
+    {
+        $relations = ['practitionerType.services', 'user'];
+        if ($this->canUseDoctorServicePivot()) {
+            $relations[] = 'services';
+        }
+        return $relations;
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $query = Doctor::with(['practitionerType', 'user']);
+        $query = Doctor::with($this->doctorWithRelations());
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
@@ -38,9 +54,10 @@ class DoctorController extends Controller
     public function store(StoreDoctorRequest $request): JsonResponse
     {
         $ptId = null;
+        $practitionerType = null;
         if ($request->practitionerTypeId) {
-            $pt = PractitionerType::where('uuid', $request->practitionerTypeId)->first();
-            $ptId = $pt?->id;
+            $practitionerType = PractitionerType::where('uuid', $request->practitionerTypeId)->with('services')->first();
+            $ptId = $practitionerType?->id;
         }
 
         $userId = null;
@@ -62,21 +79,31 @@ class DoctorController extends Controller
             'user_id'               => $userId,
         ]);
 
-        $doctor->load(['practitionerType', 'user']);
+        if ($this->canUseDoctorServicePivot() && $request->has('serviceIds')) {
+            $serviceUuids = collect($request->serviceIds ?? [])->filter()->values();
+            $services = Service::whereIn('uuid', $serviceUuids)->get();
+            if ($practitionerType) {
+                $allowedIds = $practitionerType->services->pluck('id')->all();
+                $services = $services->filter(fn($s) => in_array($s->id, $allowedIds, true))->values();
+            }
+            $doctor->services()->sync($services->pluck('id')->all());
+        }
+
+        $doctor->load($this->doctorWithRelations());
 
         return response()->json(new DoctorResource($doctor), 201);
     }
 
     public function show(string $uuid): JsonResponse
     {
-        $doctor = Doctor::where('uuid', $uuid)->with(['practitionerType', 'user'])->firstOrFail();
+        $doctor = Doctor::where('uuid', $uuid)->with($this->doctorWithRelations())->firstOrFail();
 
         return response()->json(new DoctorResource($doctor));
     }
 
     public function update(UpdateDoctorRequest $request, string $uuid): JsonResponse
     {
-        $doctor = Doctor::where('uuid', $uuid)->firstOrFail();
+        $doctor = Doctor::where('uuid', $uuid)->with(['practitionerType.services'])->firstOrFail();
 
         $data = [];
         if ($request->has('name'))          $data['name']       = $request->name;
@@ -94,7 +121,24 @@ class DoctorController extends Controller
         }
 
         $doctor->update($data);
-        $doctor->load(['practitionerType', 'user']);
+
+        if ($this->canUseDoctorServicePivot() && $request->has('serviceIds')) {
+            $serviceUuids = collect($request->serviceIds ?? [])->filter()->values();
+            $services = Service::whereIn('uuid', $serviceUuids)->get();
+
+            $type = null;
+            if ($doctor->practitioner_type_id) {
+                $type = PractitionerType::with('services')->find($doctor->practitioner_type_id);
+            }
+            if ($type) {
+                $allowedIds = $type->services->pluck('id')->all();
+                $services = $services->filter(fn($s) => in_array($s->id, $allowedIds, true))->values();
+            }
+
+            $doctor->services()->sync($services->pluck('id')->all());
+        }
+
+        $doctor->load($this->doctorWithRelations());
 
         return response()->json(new DoctorResource($doctor));
     }

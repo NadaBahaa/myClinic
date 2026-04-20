@@ -16,6 +16,8 @@ class SessionRecordResource extends JsonResource
             'doctorId'            => $this->whenLoaded('patientFile', fn() => $this->patientFile->doctor?->uuid),
             'doctorName'          => $this->whenLoaded('patientFile', fn() => $this->patientFile->doctor?->name),
             'appointmentId'       => $this->appointment?->uuid,
+            'appointmentDate'     => $this->appointment?->date?->toDateString(),
+            'appointmentTime'     => $this->appointment?->start_time,
             'date'                => $this->date->toDateString(),
             'serviceId'           => $this->service?->uuid,
             'serviceName'         => $this->service_name,

@@ -10,10 +10,13 @@ export interface Doctor {
   bio?: string;
   availability?: Record<string, string[]> | string[];
   practitionerTypeId?: string;
+  practitionerTypeName?: string;
   userId?: string;
   totalPatients?: number;
   qualifications?: string;
   licenseNumber?: string;
+  services?: { id: string; name: string; duration: number; price?: number; category?: string }[];
+  serviceIds?: string[];
 }
 
 export const doctorService = {

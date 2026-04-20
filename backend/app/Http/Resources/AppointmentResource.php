@@ -18,6 +18,9 @@ class AppointmentResource extends JsonResource
             'services'    => $this->whenLoaded('services',
                 fn() => $this->services->pluck('name')->values()
             ),
+            'serviceIds'  => $this->whenLoaded('services',
+                fn() => $this->services->pluck('uuid')->values()
+            ),
             'date'        => $this->date->toDateString(),
             'startTime'   => $this->start_time,
             'endTime'     => $this->end_time,

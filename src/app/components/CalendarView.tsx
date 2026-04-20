@@ -8,6 +8,7 @@ import { appointmentService } from '../../lib/services/appointmentService';
 import { patientService } from '../../lib/services/patientService';
 import { doctorService } from '../../lib/services/doctorService';
 import { serviceService } from '../../lib/services/serviceService';
+import { formatLocalDateYYYYMMDD } from '../../lib/date';
 
 export interface Appointment {
   id: string;
@@ -77,7 +78,7 @@ export default function CalendarView() {
   const fetchAppointments = useCallback(() => {
     setLoading(true);
     if (view === 'daily') {
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = formatLocalDateYYYYMMDD(currentDate);
       appointmentService.byDate(dateStr)
         .then((list) => setAppointments(list.map(toCalendarAppointment)))
         .catch(() => toast.error('Failed to load appointments'))
@@ -146,7 +147,7 @@ export default function CalendarView() {
 
   const handleAppointmentUpdate = async (updatedAppointment: Appointment) => {
     const payload = {
-      date: updatedAppointment.date.toISOString().split('T')[0],
+      date: formatLocalDateYYYYMMDD(updatedAppointment.date),
       startTime: updatedAppointment.startTime,
       endTime: updatedAppointment.endTime,
       duration: updatedAppointment.duration,
@@ -311,7 +312,10 @@ export default function CalendarView() {
               const canCreate = apt.patientId && (apt as { serviceIds?: string[] }).serviceIds?.length;
               if (canCreate) {
                 try {
-                  const dateStr = apt.date instanceof Date ? apt.date.toISOString().split('T')[0] : String(apt.date).slice(0, 10);
+                  const dateStr =
+                    apt.date instanceof Date
+                      ? formatLocalDateYYYYMMDD(apt.date)
+                      : String(apt.date).slice(0, 10);
                   await appointmentService.create({
                     patientId: apt.patientId,
                     doctorId: apt.doctorId,

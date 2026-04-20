@@ -24,6 +24,8 @@ class UpdateDoctorRequest extends FormRequest
             'availability'        => 'nullable|array',
             'availability.*'      => 'string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'practitionerTypeId'  => 'nullable|exists:practitioner_types,uuid',
+            'serviceIds'          => 'nullable|array',
+            'serviceIds.*'        => 'string|exists:services,uuid',
         ];
     }
 }

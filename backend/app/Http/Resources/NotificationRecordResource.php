@@ -9,15 +9,20 @@ class NotificationRecordResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id'            => $this->uuid,
-            'patientId'     => $this->patient->uuid,
-            'patientName'   => $this->patient->name,
-            'appointmentId' => $this->appointment->uuid,
-            'type'          => $this->type,
-            'sentAt'        => $this->sent_at,
-            'sentBy'        => $this->sent_by,
-            'method'        => $this->method,
-            'status'        => $this->status,
+            'id'              => $this->uuid,
+            'patientId'       => $this->patient?->uuid,
+            'patientName'     => $this->patient?->name,
+            'patientEmail'    => $this->patient?->email,
+            'patientPhone'    => $this->patient?->phone,
+            'appointmentId'   => $this->appointment?->uuid,
+            'appointmentDate' => $this->appointment?->date?->toDateString(),
+            'appointmentTime' => $this->appointment?->start_time,
+            'type'            => $this->type,
+            'sentAt'          => $this->sent_at,
+            'sentBy'          => $this->sent_by,
+            'method'          => $this->method,
+            'status'          => $this->status,
+            'message'         => $this->message,
         ];
     }
 }

@@ -17,6 +17,7 @@ import PatientsOfDayView from "./PatientsOfDayView";
 import PatientsView from "./PatientsView";
 import { appointmentService } from "../../lib/services/appointmentService";
 import { toast } from "sonner";
+import { formatLocalDateYYYYMMDD } from "../../lib/date";
 
 function toTimeHHMM(t: string): string {
   if (!t) return "";
@@ -75,10 +76,10 @@ export default function DoctorPortal() {
     // Patients of the Day needs today + tomorrow; calendar uses daily/monthly range
     if (activeTab === "patients-day") {
       const today = new Date();
-      const todayStr = today.toISOString().split("T")[0];
+      const todayStr = formatLocalDateYYYYMMDD(today);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split("T")[0];
+      const tomorrowStr = formatLocalDateYYYYMMDD(tomorrow);
       Promise.all([
         appointmentService.byDate(todayStr),
         appointmentService.byDate(tomorrowStr),
@@ -91,7 +92,7 @@ export default function DoctorPortal() {
       return;
     }
     if (view === "daily") {
-      const dateStr = currentDate.toISOString().split("T")[0];
+      const dateStr = formatLocalDateYYYYMMDD(currentDate);
       appointmentService
         .byDate(dateStr)
         .then((list) => setAppointments(list.map(toCalendarAppointment)))

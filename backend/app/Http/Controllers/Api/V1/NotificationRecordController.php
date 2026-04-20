@@ -32,10 +32,6 @@ class NotificationRecordController extends Controller
         return in_array($role, self::ALLOWED_REMINDER_ROLES, true);
     }
 
-    /**
-     * Doctors are restricted to their own appointments.
-     * Admin/assistant/superadmin can process clinic-wide reminders.
-     */
     private function applyRoleScopeToReminderQuery(Builder $query, Request $request): void
     {
         if ($request->user()?->role !== 'doctor') {
@@ -58,6 +54,11 @@ class NotificationRecordController extends Controller
             if ($patient) $query->where('patient_id', $patient->id);
         }
 
+        if ($request->query('active_only')) {
+            // Only show notifications whose appointment is in the future
+            $query->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()));
+        }
+
         return response()->json(NotificationRecordResource::collection($query->get()));
     }
 
@@ -74,6 +75,7 @@ class NotificationRecordController extends Controller
             'sent_by'        => $request->sentBy,
             'method'         => $request->method,
             'status'         => $request->status ?? 'sent',
+            'message'        => $request->message ?? null,
         ]);
 
         $record->load(['patient', 'appointment']);
@@ -82,8 +84,50 @@ class NotificationRecordController extends Controller
     }
 
     /**
+     * GET /api/v1/notifications/patient-counts
+     * Per-patient notification counts for future appointments (resets after appointment passes).
+     */
+    public function patientCounts(Request $request): JsonResponse
+    {
+        $query = NotificationRecord::with(['patient', 'appointment'])
+            ->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()))
+            ->select('patient_id')
+            ->selectRaw('COUNT(*) as total_count')
+            ->selectRaw('MAX(sent_at) as last_sent_at')
+            ->groupBy('patient_id');
+
+        $results = $query->get();
+
+        $data = $results->map(function ($row) {
+            $patient = $row->patient;
+            // Get last notification for message/sent_by
+            $last = NotificationRecord::with(['appointment'])
+                ->where('patient_id', $row->patient_id)
+                ->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()))
+                ->latest('sent_at')
+                ->first();
+
+            return [
+                'patientId'    => $patient?->uuid,
+                'patientName'  => $patient?->name,
+                'patientEmail' => $patient?->email,
+                'patientPhone' => $patient?->phone,
+                'count'        => (int) $row->total_count,
+                'lastSentAt'   => $row->last_sent_at,
+                'lastMessage'  => $last?->message,
+                'lastSentBy'   => $last?->sent_by,
+                'lastMethod'   => $last?->method,
+                'appointmentDate' => $last?->appointment?->date?->toDateString(),
+                'appointmentTime' => $last?->appointment?->start_time,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    /**
      * GET /api/v1/notifications/pending
-     * Appointments 1 to N days ahead (N = reminder_days_before) that haven't received a reminder yet.
+     * Appointments 1 to N days ahead that haven't received a reminder yet.
      */
     public function pending(): JsonResponse
     {
@@ -122,7 +166,7 @@ class NotificationRecordController extends Controller
 
     /**
      * POST /api/v1/notifications/send-reminders
-     * Send reminder (email + optional SMS via SMSMisr; WhatsApp is currently logged-only).
+     * Send reminder via email + optional SMS. Stores message content in notification record.
      */
     public function sendReminders(Request $request): JsonResponse
     {
@@ -154,13 +198,33 @@ class NotificationRecordController extends Controller
             $patient = $appointment->patient;
             $doctor  = $appointment->doctor;
             $servicesText = $appointment->services->pluck('name')->implode(', ');
-            $body = "Appointment reminder\n\n"
-                . "Patient: {$patient->name}\n"
-                . "Date: {$appointment->date->toDateString()} at {$appointment->start_time}\n"
+
+            $clinicName = Setting::get('clinic_name', 'Beauty Clinic');
+            $body = "Dear {$patient->name},\n\n"
+                . "This is a reminder for your upcoming appointment at {$clinicName}.\n\n"
+                . "Date: {$appointment->date->toDateString()}\n"
+                . "Time: {$appointment->start_time}\n"
                 . "Doctor: {$doctor->name}\n"
                 . "Services: {$servicesText}\n"
                 . ($appointment->notes ? "Notes: {$appointment->notes}\n" : '')
-                . "\nPlease confirm or reschedule if needed.";
+                . "\nIf you need to reschedule, please contact us as soon as possible.\n\n"
+                . "Thank you,\n{$clinicName}";
+
+            $htmlBody = "
+                <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;'>
+                <h2 style='color:#e91e8c;'>Appointment Reminder</h2>
+                <p>Dear <strong>{$patient->name}</strong>,</p>
+                <p>This is a reminder for your upcoming appointment at <strong>{$clinicName}</strong>.</p>
+                <table style='width:100%;border-collapse:collapse;margin:20px 0;'>
+                  <tr><td style='padding:8px;background:#f9f9f9;font-weight:bold;width:140px;'>Date:</td><td style='padding:8px;'>{$appointment->date->toDateString()}</td></tr>
+                  <tr><td style='padding:8px;background:#f9f9f9;font-weight:bold;'>Time:</td><td style='padding:8px;'>{$appointment->start_time}</td></tr>
+                  <tr><td style='padding:8px;background:#f9f9f9;font-weight:bold;'>Doctor:</td><td style='padding:8px;'>{$doctor->name}</td></tr>
+                  <tr><td style='padding:8px;background:#f9f9f9;font-weight:bold;'>Services:</td><td style='padding:8px;'>{$servicesText}</td></tr>
+                  " . ($appointment->notes ? "<tr><td style='padding:8px;background:#f9f9f9;font-weight:bold;'>Notes:</td><td style='padding:8px;'>{$appointment->notes}</td></tr>" : '') . "
+                </table>
+                <p>If you need to reschedule, please contact us as soon as possible.</p>
+                <p>Thank you,<br><strong>{$clinicName}</strong></p>
+                </div>";
 
             $methods = ['email'];
             if ($request->boolean('alsoSms') && ! empty($patient->phone)) {
@@ -174,45 +238,40 @@ class NotificationRecordController extends Controller
                 $status = 'sent';
                 try {
                     if ($method === 'email' && ! empty($patient->email)) {
-                        Mail::raw($body, function ($message) use ($patient, $appointment) {
+                        Mail::send([], [], function ($message) use ($patient, $appointment, $htmlBody, $body) {
                             $message->to($patient->email)
-                                ->subject('Appointment reminder: ' . $appointment->date->toDateString() . ' at ' . $appointment->start_time);
+                                ->subject('Appointment Reminder: ' . $appointment->date->toDateString() . ' at ' . $appointment->start_time)
+                                ->setBody($htmlBody, 'text/html')
+                                ->addPart($body, 'text/plain');
                         });
                     } elseif ($method === 'sms' && ! empty($patient->phone)) {
                         if (! $this->smsMisrConfigured()) {
                             $status = 'failed';
-                            Log::warning('SMSMisr is not configured; SMS reminder skipped', [
-                                'patient_id' => $patient->id,
-                                'phone'      => $patient->phone,
-                            ]);
+                            Log::warning('SMSMisr not configured; SMS skipped', ['patient_id' => $patient->id]);
                         } else {
                             $response = Smsmisr::send($body, $patient->phone);
                             if (! $response->isSuccessful()) {
                                 $status = 'failed';
-                                Log::warning('SMSMisr returned failure', [
-                                    'patient_id' => $patient->id,
-                                    'phone'      => $patient->phone,
-                                    'code'       => $response->code,
-                                    'message'    => $response->message,
-                                ]);
+                                Log::warning('SMSMisr failure', ['patient_id' => $patient->id, 'code' => $response->code]);
                             }
                         }
                     } elseif ($method === 'whatsapp' && ! empty($patient->phone)) {
-                        Log::info('WhatsApp reminder requested (provider not configured yet)', [
+                        Log::info('WhatsApp reminder (provider not configured)', [
                             'patient_id' => $patient->id,
                             'phone'      => $patient->phone,
-                            'body'       => $body,
                         ]);
                     }
                 } catch (\Throwable $e) {
                     $status = 'failed';
                     Log::warning('Reminder send failed', ['method' => $method, 'patient' => $patient->id, 'error' => $e->getMessage()]);
                 }
+
                 if ($status === 'sent') {
                     $sent++;
                 } else {
                     $failed++;
                 }
+
                 NotificationRecord::create([
                     'patient_id'     => $patient->id,
                     'appointment_id' => $appointment->id,
@@ -221,6 +280,7 @@ class NotificationRecordController extends Controller
                     'sent_by'        => $senderName,
                     'method'         => $method,
                     'status'         => $status,
+                    'message'        => $body,
                 ]);
             }
         }

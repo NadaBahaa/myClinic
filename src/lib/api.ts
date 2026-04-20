@@ -16,6 +16,10 @@ function resolveApiBaseUrl(): string {
 const BASE_URL = resolveApiBaseUrl();
 
 const TOKEN_KEY = 'beauty_clinic_token';
+const inflightGetRequests = new Map<string, Promise<unknown>>();
+const recentGetCache = new Map<string, { ts: number; data: unknown }>();
+const rateLimitedUntil = new Map<string, number>();
+const GET_DEDUPE_WINDOW_MS = 800;
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -45,6 +49,29 @@ export function unwrapLaravelData<T>(json: unknown): T {
 }
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const isGetWithoutBody = method === 'GET' && options.body === undefined;
+  const requestUrl = `${BASE_URL}${path}`;
+  const dedupeKey = `${method}:${requestUrl}`;
+
+  if (isGetWithoutBody) {
+    const blockedUntil = rateLimitedUntil.get(dedupeKey) ?? 0;
+    if (Date.now() < blockedUntil) {
+      throw new Error('Too many requests. Please wait a moment and try again.');
+    }
+
+    const cached = recentGetCache.get(dedupeKey);
+    if (cached && Date.now() - cached.ts < GET_DEDUPE_WINDOW_MS) {
+      return cached.data as T;
+    }
+
+    const existing = inflightGetRequests.get(dedupeKey);
+    if (existing) {
+      return existing as Promise<T>;
+    }
+  }
+
+  const execute = async (): Promise<T> => {
   const token = getToken();
 
   const headers: Record<string, string> = {
@@ -57,7 +84,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(requestUrl, {
     method: options.method ?? 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
@@ -75,11 +102,36 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const data = contentType.includes('application/json') ? await response.json() : null;
 
   if (!response.ok) {
+    if (response.status === 429 && isGetWithoutBody) {
+      const retryAfterHeader = response.headers.get('Retry-After');
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : NaN;
+      const cooldownMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+        ? retryAfterSeconds * 1000
+        : 2000;
+      rateLimitedUntil.set(dedupeKey, Date.now() + cooldownMs);
+    }
     const message = data?.message ?? `HTTP ${response.status}`;
     throw new Error(message);
   }
 
   return data as T;
+  };
+
+  if (!isGetWithoutBody) {
+    return execute();
+  }
+
+  const inFlight = execute()
+    .then((result) => {
+      recentGetCache.set(dedupeKey, { ts: Date.now(), data: result });
+      return result;
+    })
+    .finally(() => {
+      inflightGetRequests.delete(dedupeKey);
+    });
+
+  inflightGetRequests.set(dedupeKey, inFlight as Promise<unknown>);
+  return inFlight as Promise<T>;
 }
 
 /** Download file (e.g. CSV export) with auth; returns blob and suggested filename from Content-Disposition if present. */

@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { patientFileService } from '../../lib/services/patientFileService';
 import { materialService } from '../../lib/services/materialService';
 import { couponService } from '../../lib/services/couponService';
+import { formatLocalDateYYYYMMDD } from '../../lib/date';
+import { appointmentService } from '../../lib/services/appointmentService';
 
 function parseFileDates(file: PatientFile): PatientFile {
   return {
@@ -371,7 +373,7 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
             <label className="block mb-2 text-gray-700">Date</label>
             <input
               type="date"
-              value={formData.date.toISOString().split('T')[0]}
+              value={formatLocalDateYYYYMMDD(formData.date)}
               onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
             />
@@ -527,6 +529,8 @@ export default function PatientFileView({
 
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
+  const [linkedAppointments, setLinkedAppointments] = useState<import('../../lib/services/appointmentService').Appointment[]>([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   useEffect(() => {
     patientFileService.getFile(patientId, doctorId)
@@ -536,6 +540,15 @@ export default function PatientFileView({
         onClose();
       })
       .finally(() => setLoading(false));
+  }, [patientId, doctorId]);
+
+  useEffect(() => {
+    setAppointmentsLoading(true);
+    appointmentService
+      .search({ patient: patientId, doctor: doctorId })
+      .then((list) => setLinkedAppointments(Array.isArray(list) ? list : []))
+      .catch(() => setLinkedAppointments([]))
+      .finally(() => setAppointmentsLoading(false));
   }, [patientId, doctorId]);
 
   const fileId = patientFile?.id;
@@ -559,6 +572,29 @@ export default function PatientFileView({
     setIsSessionModalOpen(true);
   };
 
+  const handleAddSessionFromAppointment = (apt: import('../../lib/services/appointmentService').Appointment) => {
+    const prefill: SessionRecord = {
+      id: '',
+      appointmentId: apt.id,
+      appointmentDate: apt.date,
+      appointmentTime: apt.startTime,
+      date: new Date(apt.date),
+      serviceId: (apt.serviceIds?.[0] ?? ''),
+      serviceName: (apt.services?.join(', ') || ''),
+      servicePrice: 0,
+      discountAmount: 0,
+      originalServicePrice: null,
+      couponCode: null,
+      materialsUsed: [],
+      totalMaterialsCost: 0,
+      netProfit: 0,
+      notes: '',
+      performedBy: doctorName,
+    };
+    setSelectedSession(prefill);
+    setIsSessionModalOpen(true);
+  };
+
   const handleEditSession = (session: SessionRecord) => {
     setSelectedSession(session);
     setIsSessionModalOpen(true);
@@ -566,12 +602,16 @@ export default function PatientFileView({
 
   const handleSaveSession = async (session: SessionRecord) => {
     if (!patientFile || !fileId) return;
+    const dateStr = typeof session.date === 'string' ? session.date : formatLocalDateYYYYMMDD(session.date);
+    const performedBy = session.performedBy || doctorName;
+    const notes = session.notes ?? '';
     const payload: Record<string, unknown> = {
-      date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
+      date: dateStr,
+      appointmentId: session.appointmentId || undefined,
       serviceName: session.serviceName,
       servicePrice: session.servicePrice,
-      performedBy: session.performedBy || doctorName,
-      notes: session.notes ?? '',
+      performedBy,
+      notes,
       materialsUsed: session.materialsUsed.map((m) => ({ materialId: m.materialId, quantity: m.quantity, unitPrice: m.unitPrice })),
     };
     if (!selectedSession && session.couponCode && session.originalServicePrice != null) {
@@ -580,7 +620,7 @@ export default function PatientFileView({
     }
     try {
       if (selectedSession) {
-        await patientFileService.updateSession(fileId, selectedSession.id, { notes: payload.notes, date: payload.date, performedBy: payload.performedBy });
+        await patientFileService.updateSession(fileId, selectedSession.id, { notes, date: dateStr as unknown as Date, performedBy });
         setPatientFile(prev => prev ? ({ ...prev, sessions: prev.sessions.map(s => s.id === session.id ? { ...session, date: typeof session.date === 'string' ? new Date(session.date) : session.date } : s) }) : null);
         toast.success('Session updated successfully');
       } else {
@@ -650,19 +690,19 @@ export default function PatientFileView({
       prescribedBy: doctorName,
     };
 
-    setPatientFile(prev => ({
+    setPatientFile(prev => (prev ? ({
       ...prev,
       prescriptions: [...prev.prescriptions, newPrescription],
-    }));
+    }) : prev));
     toast.success('Prescription added successfully');
   };
 
   const handleDeletePrescription = (prescriptionId: string) => {
     if (confirm('Are you sure you want to delete this prescription?')) {
-      setPatientFile(prev => ({
+      setPatientFile(prev => (prev ? ({
         ...prev,
         prescriptions: prev.prescriptions.filter(p => p.id !== prescriptionId),
-      }));
+      }) : prev));
       toast.success('Prescription deleted successfully');
     }
   };
@@ -795,6 +835,56 @@ export default function PatientFileView({
                 </button>
               </div>
 
+              <div className="mb-6">
+                <h4 className="text-sm text-gray-700 mb-2">Appointments (Booked / Completed)</h4>
+                {appointmentsLoading ? (
+                  <div className="text-sm text-gray-500">Loading appointments…</div>
+                ) : linkedAppointments.length === 0 ? (
+                  <div className="text-sm text-gray-500">No appointments found for this doctor.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {[...linkedAppointments]
+                      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.startTime.localeCompare(a.startTime)))
+                      .slice(0, 15)
+                      .map((apt) => {
+                        const hasSession = patientFile.sessions.some((s) => s.appointmentId === apt.id);
+                        return (
+                          <div key={apt.id} className="border border-gray-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm text-gray-900 font-medium">{apt.date}</span>
+                                <span className="text-sm text-gray-600">{apt.startTime}–{apt.endTime}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  apt.status === 'completed' ? 'bg-green-100 text-green-700'
+                                  : apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {apt.status}
+                                </span>
+                                {hasSession && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Session recorded</span>
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {(apt.services ?? []).join(', ') || '—'}
+                              </div>
+                            </div>
+                            {/* {!hasSession && apt.status === 'completed' && (
+                              <button
+                                type="button"
+                                onClick={() => handleAddSessionFromAppointment(apt)}
+                                className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-black transition-colors"
+                              >
+                                Create session
+                              </button>
+                            )} */}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+
               {patientFile.sessions.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -802,13 +892,26 @@ export default function PatientFileView({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {patientFile.sessions.map((session) => (
+                  {[...patientFile.sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((session) => (
                     <div key={session.id} className="border border-gray-200 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <h4 className="text-lg text-gray-900">{session.serviceName}</h4>
-                          <p className="text-sm text-gray-600">
-                            {session.date.toLocaleDateString()} • By {session.performedBy}
+                          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                            <p className="text-sm text-gray-600">
+                              {session.date.toLocaleDateString()}
+                              {session.appointmentTime ? ` at ${session.appointmentTime}` : ''}
+                            </p>
+                            <p className="text-sm text-gray-600">• By <span className="font-medium">{session.performedBy}</span></p>
+                            {session.appointmentId && (
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                Linked to Appointment
+                              </span>
+                            )}
+                          </div>
+                          {/* Doctor info from patient file */}
+                          <p className="text-xs text-gray-500 mt-1">
+                            Doctor: <span className="font-medium text-gray-700">{doctorName}</span>
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -827,19 +930,33 @@ export default function PatientFileView({
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-4 mb-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                         <div>
-                          <p className="text-sm text-gray-600">Service Price</p>
-                          <p className="text-lg text-gray-900">${session.servicePrice.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">List Price</p>
+                          <p className="text-base text-gray-900">
+                            {session.originalServicePrice != null
+                              ? `EGP ${session.originalServicePrice.toFixed(2)}`
+                              : `EGP ${session.servicePrice.toFixed(2)}`}
+                          </p>
+                        </div>
+                        {(session.discountAmount ?? 0) > 0 && (
+                          <div>
+                            <p className="text-xs text-gray-500">Discount{session.couponCode ? ` (${session.couponCode})` : ''}</p>
+                            <p className="text-base text-amber-600">−EGP {(session.discountAmount ?? 0).toFixed(2)}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-gray-500">Charged</p>
+                          <p className="text-base text-blue-700">EGP {session.servicePrice.toFixed(2)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Materials Cost</p>
-                          <p className="text-lg text-red-600">-${session.totalMaterialsCost.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">Materials Cost</p>
+                          <p className="text-base text-red-600">−EGP {session.totalMaterialsCost.toFixed(2)}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Net Profit</p>
-                          <p className={`text-lg ${session.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            ${session.netProfit.toFixed(2)}
+                          <p className="text-xs text-gray-500">Net Profit</p>
+                          <p className={`text-base font-semibold ${session.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            EGP {session.netProfit.toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -853,7 +970,7 @@ export default function PatientFileView({
                                 key={index}
                                 className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
                               >
-                                {material.materialName} ({material.quantity})
+                                {material.materialName} ×{material.quantity}
                               </span>
                             ))}
                           </div>
@@ -899,7 +1016,7 @@ export default function PatientFileView({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {photosSorted.map((photo) => (
                     <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <img src={photo.url.startsWith('http') ? photo.url : `${(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/api\/v1\/?$/, '') || window.location.origin}${photo.url}`} alt={photo.type} className="w-full h-48 object-cover" />
+                      <img src={photo.url.startsWith('http') ? photo.url : `${(((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).replace(/\/api\/v1\/?$/, '') || window.location.origin}${photo.url}`} alt={photo.type} className="w-full h-48 object-cover" />
                       <div className="p-3">
                         <div className="flex justify-between items-center mb-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -1012,7 +1129,7 @@ export default function PatientFileView({
                 <div className="space-y-3">
                   {attachments.map((a) => (
                     <div key={a.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
-                      <a href={a.path.startsWith('http') ? a.path : `${(import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/api\/v1.*$/, '')}${a.path}`} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
+                      <a href={a.path.startsWith('http') ? a.path : `${(((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).replace(/\/api\/v1.*$/, '')}${a.path}`} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
                         {a.name}
                       </a>
                       <button

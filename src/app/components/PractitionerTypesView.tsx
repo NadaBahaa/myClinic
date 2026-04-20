@@ -47,6 +47,16 @@ export default function PractitionerTypesView() {
     return Math.floor(Math.random() * 10) + 1;
   };
 
+  const toArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      return trimmed.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -159,14 +169,14 @@ export default function PractitionerTypesView() {
             <div className="mb-4">
               <p className="text-xs text-gray-500 mb-2">Allowed Services:</p>
               <div className="flex flex-wrap gap-1">
-                {type.allowedServiceCategories.slice(0, 3).map((cat) => (
+                {toArray((type as unknown as Record<string, unknown>).allowedServiceCategories).slice(0, 3).map((cat) => (
                   <span key={cat} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                     {cat}
                   </span>
                 ))}
-                {type.allowedServiceCategories.length > 3 && (
+                {toArray((type as unknown as Record<string, unknown>).allowedServiceCategories).length > 3 && (
                   <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                    +{type.allowedServiceCategories.length - 3}
+                    +{toArray((type as unknown as Record<string, unknown>).allowedServiceCategories).length - 3}
                   </span>
                 )}
               </div>
