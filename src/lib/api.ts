@@ -48,6 +48,19 @@ export function unwrapLaravelData<T>(json: unknown): T {
   return json as T;
 }
 
+function extractApiErrorMessage(payload: any, status: number): string {
+  const fallback = `HTTP ${status}`;
+  if (!payload || typeof payload !== 'object') return fallback;
+  if (typeof payload.message === 'string' && payload.message.trim() !== '') {
+    return payload.message;
+  }
+  if (payload.errors && typeof payload.errors === 'object') {
+    const firstError = Object.values(payload.errors).find((v) => Array.isArray(v) && v.length > 0) as string[] | undefined;
+    if (firstError?.[0]) return firstError[0];
+  }
+  return fallback;
+}
+
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
   const isGetWithoutBody = method === 'GET' && options.body === undefined;
@@ -110,7 +123,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
         : 2000;
       rateLimitedUntil.set(dedupeKey, Date.now() + cooldownMs);
     }
-    const message = data?.message ?? `HTTP ${response.status}`;
+    const message = extractApiErrorMessage(data, response.status);
     throw new Error(message);
   }
 
@@ -185,9 +198,7 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
 
   const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data?.message ?? `HTTP ${response.status}`);
-  }
+  if (!response.ok) throw new Error(extractApiErrorMessage(data, response.status));
 
   return unwrapLaravelData<T>(data);
 }

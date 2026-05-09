@@ -6,7 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
-    "dev:api": "cd backend && php artisan serve --host=127.0.0.1 --port=8001",
+    "dev:api": "cd backend && php artisan serve --host=127.0.0.1 --port=8000",
     "dev:all": "concurrently -k -n api,web -c blue,magenta \"npm run dev:api\" \"npm run dev\""
   },
   "dependencies": {

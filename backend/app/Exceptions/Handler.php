@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,22 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (QueryException $e, Request $request) {
+            if (! ($request->is('api/*') || $request->expectsJson())) {
+                return null;
+            }
+
+            $message = $e->getMessage();
+            $isConnectionIssue = str_contains($message, '[2002]') || str_contains($message, 'Connection refused');
+            if (! $isConnectionIssue) {
+                return null;
+            }
+
+            return response()->json([
+                'message' => 'Database connection failed. Start MySQL (XAMPP) or update backend/.env database settings.',
+            ], 503);
         });
     }
 

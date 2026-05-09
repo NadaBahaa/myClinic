@@ -1,0 +1,134 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - React + Vite
+  - Tailwind CSS
+  - Laravel API backend integration
+routes:
+  - path: /
+    file: src/app/App.tsx
+    auth_required: false
+    description: Landing page with navigation to login
+  - path: /login
+    file: src/app/components/Login.tsx
+    auth_required: false
+    description: User login screen with email/password
+  - path: /forgot-password
+    file: src/app/components/ForgotPassword.tsx
+    auth_required: false
+    description: Password reset request form
+  - path: /reset-password
+    file: src/app/components/ResetPassword.tsx
+    auth_required: false
+    description: Reset password with token and email query params
+  - path: /admin
+    file: src/app/components/AdminDashboard.tsx
+    auth_required: true
+    description: Admin dashboard with clinic management modules
+  - path: /doctor
+    file: src/app/components/DoctorPortal.tsx
+    auth_required: true
+    description: Doctor portal for schedules and patient files
+  - path: /assistant
+    file: src/app/components/AssistantPortal.tsx
+    auth_required: true
+    description: Assistant portal for daily operations
+  - path: /accountant
+    file: src/app/components/AccountantDashboard.tsx
+    auth_required: true
+    description: Accountant dashboard and reporting
+  - path: /superadmin
+    file: src/app/components/SuperAdminDashboard.tsx
+    auth_required: true
+    description: Superadmin control panel for system settings and users
+features:
+  - name: Authentication and Session Restore
+    description: Supports login/logout, restore session from token, and role-based landing after login
+    files:
+      - src/app/App.tsx
+      - src/lib/services/authService.ts
+      - src/lib/api.ts
+      - src/app/components/Login.tsx
+    entry_route: /login
+    user_interactions:
+      - Enter email and password
+      - Click Login
+      - See role-specific dashboard on success
+      - See validation or API error on failure
+    api_calls:
+      - method: POST
+        endpoint: /api/v1/auth/login
+      - method: GET
+        endpoint: /api/v1/auth/me
+      - method: POST
+        endpoint: /api/v1/auth/logout
+    auth_required: false
+  - name: Password Recovery
+    description: Allows users to request and complete password reset flow
+    files:
+      - src/app/components/ForgotPassword.tsx
+      - src/app/components/ResetPassword.tsx
+      - src/lib/services/authService.ts
+    entry_route: /forgot-password
+    user_interactions:
+      - Submit email for reset link
+      - Open reset page from tokenized URL
+      - Enter new password and confirmation
+      - Submit to complete reset
+    api_calls:
+      - method: POST
+        endpoint: /api/v1/auth/forgot-password
+      - method: POST
+        endpoint: /api/v1/auth/reset-password
+    auth_required: false
+  - name: Patient File Management
+    description: Manage sessions, photos, prescriptions, and attachments inside patient medical file modal
+    files:
+      - src/app/components/PatientFileView.tsx
+      - src/lib/services/patientFileService.ts
+    entry_route: /doctor
+    user_interactions:
+      - Open patient file from patient list
+      - Add/edit/delete treatment sessions
+      - Upload before/during/after photos
+      - Add and remove prescriptions and attachments
+    api_calls:
+      - method: GET
+        endpoint: /api/v1/patients/{patientUuid}/files/{doctorUuid}
+      - method: POST
+        endpoint: /api/v1/patient-files/{fileUuid}/sessions
+      - method: POST
+        endpoint: /api/v1/patient-files/{fileUuid}/photos
+      - method: POST
+        endpoint: /api/v1/patient-files/{fileUuid}/attachments
+    auth_required: true
+  - name: Coupon and Discount Operations
+    description: Create, manage, and apply coupons to sessions with discount preview
+    files:
+      - src/app/components/CouponsView.tsx
+      - src/lib/services/couponService.ts
+      - src/app/components/PatientFileView.tsx
+    entry_route: /admin
+    user_interactions:
+      - Create coupon code with type/value/limits
+      - Edit or delete coupon
+      - Apply coupon in session form and preview discount
+      - Save session with coupon-adjusted total
+    api_calls:
+      - method: GET
+        endpoint: /api/v1/coupons
+      - method: POST
+        endpoint: /api/v1/coupons
+      - method: PUT
+        endpoint: /api/v1/coupons/{uuid}
+      - method: POST
+        endpoint: /api/v1/coupons/preview
+    auth_required: true
+known_limitations:
+  - issue: Routing is state-based in App component and not true URL router for most pages.
+    location: src/app/App.tsx
+    impact: Deep-linking and direct browser navigation to role dashboards is limited.
+  - issue: Some role dashboard tabs are controlled client-side by permissions and module visibility payload.
+    location: src/app/components/AdminDashboard.tsx
+    impact: UI visibility depends on API payload correctness and may hide features if visibility is misconfigured.

@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173",
+  "loginUser": "admin@clinic.com",
+  "loginPassword": "admin123",
+  "executionArgs": {
+    "projectName": "Beauty Clinic Management App (Final-2)",
+    "projectPath": "/Applications/XAMPP/xamppfiles/htdocs/Beauty Clinic Management App (Final-2)",
+    "testIds": [],
+    "additionalInstruction": "Run full high-priority frontend suite with login scenarios using demo credentials if available. Focus on auth flow, patient file modal image preview, and coupon/session paths.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-jh8ehUnGp0cAoJ-EBw31Te4GnReUVD8uHTHQNyEyrmn943WbVfHkoHNmE13TR0sF1mzF8phDmt1yg5YqvaZjvnW7bn_VbMf__ReFUK6IJG_hSPjGb0bZR1VEB_7LyYT0zaM"
+    }
+  },
+  "serverPort": 63613,
+  "proxy": "http://b811f669-e5a3-4cff-8d37-388622a68a96:SU6LibC9LMEBK8yIq3EjsFUYd7WzYvn0@tun.testsprite.com:8080"
+}

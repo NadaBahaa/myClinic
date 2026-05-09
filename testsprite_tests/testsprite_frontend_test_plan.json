@@ -1,0 +1,2336 @@
+[
+  {
+    "id": "TC001",
+    "title": "Sign in and land on the correct role dashboard",
+    "description": "A user can sign in with valid credentials and is redirected to their role-specific dashboard with appropriate modules visible.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on a role-specific dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation modules appropriate to the role are visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Doctor can record a session with service, materials, and optional coupon",
+    "description": "This test verifies a doctor can open a completed appointment, record a session with a service and materials, optionally preview a coupon discount, submit, and see saved financial totals including net profit.",
+    "category": "Session Recording & Financial Tracking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open a completed appointment from the doctor schedule"
+      },
+      {
+        "type": "action",
+        "description": "Click to create a session record"
+      },
+      {
+        "type": "action",
+        "description": "Select a performed service"
+      },
+      {
+        "type": "action",
+        "description": "Add a material line item"
+      },
+      {
+        "type": "action",
+        "description": "Select a material"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid positive quantity into the material quantity field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a coupon code into the coupon field"
+      },
+      {
+        "type": "action",
+        "description": "Click to preview the coupon discount"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved session shows service price, discount amount, total materials cost, and net profit"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Decrement inventory stock when doctor submits a session using materials",
+    "description": "Verifies a doctor can record a session that uses a material and the material stock quantity decreases by the used amount after saving.",
+    "category": "Materials & Tools Inventory",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedule or daily calendar view"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment from today"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient file for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new session record"
+      },
+      {
+        "type": "action",
+        "description": "Add a material usage line item to the session"
+      },
+      {
+        "type": "action",
+        "description": "Select a material that shows available stock"
+      },
+      {
+        "type": "action",
+        "description": "Fill a small positive quantity into the material quantity field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a session save confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected material shows a reduced remaining stock compared to before the session"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Restore an existing session into the correct dashboard",
+    "description": "A signed-in user who reloads the app remains signed in and returns to the correct role dashboard without re-authenticating.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Reload the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains signed in and stays on a role-specific dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Doctor can create and save a treatment session in a patient file",
+    "description": "This test verifies a doctor can open a patient file from the patient list, create a new treatment session, save it, and see it appended in the patient file.",
+    "category": "Patient File Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the patient list"
+      },
+      {
+        "type": "action",
+        "description": "Open a patient file for a listed patient"
+      },
+      {
+        "type": "action",
+        "description": "Click to add a new treatment session"
+      },
+      {
+        "type": "action",
+        "description": "Fill required session details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new session entry is displayed in the patient file timeline or session list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Prevent authenticated access to another role dashboard via direct navigation",
+    "description": "A signed-in user cannot access a different role dashboard route and is redirected or blocked appropriately.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is blocked or the user is redirected back to their own role dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Log out and require login to access dashboards",
+    "description": "A signed-in user can log out and is then blocked from accessing any authenticated dashboard until signing in again.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the logout control"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /doctor"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is redirected to the login screen"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Assistant can create an appointment and see it appear in the calendar",
+    "description": "An assistant can create an appointment by selecting patient, doctor, date, time, and duration and then sees it listed on the chosen date.",
+    "category": "Appointment & Calendar Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the assistant portal"
+      },
+      {
+        "type": "action",
+        "description": "Open appointment creation"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing patient"
+      },
+      {
+        "type": "action",
+        "description": "Select a doctor"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid date into the appointment date field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid start time"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid duration"
+      },
+      {
+        "type": "action",
+        "description": "Submit to save the appointment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the appointment is listed in the calendar for the chosen date"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Apply a valid coupon in session and record discount",
+    "description": "Verifies a doctor can preview and apply a valid coupon during session creation and the saved session shows a recorded discount.",
+    "category": "Coupon and Discount Operations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedule or daily calendar view"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment from today"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient file for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new session record"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid coupon code into the coupon field"
+      },
+      {
+        "type": "action",
+        "description": "Request a coupon preview"
+      },
+      {
+        "type": "action",
+        "description": "Apply the coupon to the session"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved session displays a non-zero discount amount"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Create inventory item and see it listed with stock",
+    "description": "Verifies an admin can create a new material/tool with unit price and stock quantity and the item appears in the inventory list with its current stock.",
+    "category": "Materials & Tools Inventory",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the inventory or materials/tools module"
+      },
+      {
+        "type": "action",
+        "description": "Open the create inventory item form"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique name into the item name field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid item type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid unit price into the unit price field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid stock quantity into the stock quantity field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the inventory item form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new inventory item appears in the inventory list with a displayed stock quantity"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Doctor daily calendar shows only assigned appointments",
+    "description": "A doctor can view the daily calendar and sees only appointments assigned to them for the selected day.",
+    "category": "Appointment & Calendar Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the doctor portal"
+      },
+      {
+        "type": "action",
+        "description": "Open the daily calendar view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify only appointments assigned to the signed-in doctor are displayed for the selected day"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Assistant can create a patient record",
+    "description": "This test verifies an assistant can create a new patient with required demographic/contact details and the patient appears in the patient list afterward.",
+    "category": "Patient Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open patient creation"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique patient full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the patient form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new patient appears in the patient list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Create a new clinic user account",
+    "description": "An admin can create a user with a role and permission flags and the new user appears in the user list.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open user management"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new user"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Select a role for the new user"
+      },
+      {
+        "type": "action",
+        "description": "Select at least one permission flag"
+      },
+      {
+        "type": "action",
+        "description": "Submit the user creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new user appears in the user list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Superadmin can disable a module for a role and impacted navigation updates",
+    "description": "Verifies a Superadmin can disable a module for a specific role and the impacted role’s portal navigation no longer shows that module.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open module management"
+      },
+      {
+        "type": "action",
+        "description": "Disable one module for a selected role"
+      },
+      {
+        "type": "action",
+        "description": "Save the module visibility changes"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the affected role’s portal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the disabled module is not available in the affected role’s navigation"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Reject sign-in with invalid credentials",
+    "description": "A user who enters an incorrect password cannot sign in and sees a credentials validation error.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with invalid.user@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with wrong-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a credentials validation error is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Run a filtered session financial report and view net profit fields",
+    "description": "Verifies an accountant can run a session-level report with a date range and optional filters and see sessions listed with service price, materials cost, discount, and net profit.",
+    "category": "Financial Reports & CSV Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the reports module"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date range for the report"
+      },
+      {
+        "type": "action",
+        "description": "Select a doctor filter option"
+      },
+      {
+        "type": "action",
+        "description": "Select a service filter option"
+      },
+      {
+        "type": "action",
+        "description": "Run the session report"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of session report rows is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each displayed session row includes service price, materials cost, discount, and net profit fields"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Admin can edit an appointment and see the updated details",
+    "description": "An admin can open an existing appointment from the calendar, edit its details, save, and see the changes reflected in the calendar.",
+    "category": "Appointment & Calendar Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the admin dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open appointment management calendar"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing appointment from the calendar"
+      },
+      {
+        "type": "action",
+        "description": "Change the appointment date to another valid date"
+      },
+      {
+        "type": "action",
+        "description": "Change the appointment start time to another valid time"
+      },
+      {
+        "type": "action",
+        "description": "Save the appointment changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the calendar shows the appointment at the updated time and date"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Admin can search and open a patient detail to view history",
+    "description": "This test verifies an admin can create a patient, search by name or phone, open the patient detail, and see demographics plus visit history sections displayed.",
+    "category": "Patient Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open patient creation"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique patient full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the patient form"
+      },
+      {
+        "type": "action",
+        "description": "Fill the patient search field with the created patient name"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient detail from the search results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify patient demographics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify visit history is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Create a percent or fixed coupon and see it listed",
+    "description": "Verifies an admin can create a coupon with type, value, and validity window and the coupon appears in the coupons list.",
+    "category": "Coupon and Discount Operations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the coupons module"
+      },
+      {
+        "type": "action",
+        "description": "Open the create coupon form"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique coupon code into the coupon code field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid coupon type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid coupon value into the value field"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity start date within an allowed range"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity end date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the coupon"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new coupon appears in the coupons list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Deactivate a user account from superadmin portal",
+    "description": "A superadmin can toggle a user to inactive and the user is shown as inactive in the system user list.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the system user list"
+      },
+      {
+        "type": "action",
+        "description": "Select a user from the list"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the user's active status to inactive"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is shown as inactive in the system user list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Module visibility change blocks access to the module entry point for affected role",
+    "description": "Verifies that after a module is disabled for a role, the user cannot access the module entry point through normal portal navigation.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open module management"
+      },
+      {
+        "type": "action",
+        "description": "Disable one module for a selected role"
+      },
+      {
+        "type": "action",
+        "description": "Save the module visibility changes"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the affected role’s portal"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to open the disabled module from the portal navigation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access to the disabled module is blocked through the UI"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Admin can edit patient contact details",
+    "description": "This test verifies an admin can create a patient, edit contact details, save changes, and see the updated patient information reflected in the patient record.",
+    "category": "Patient Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open patient creation"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique patient full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the patient form"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient detail for the created patient"
+      },
+      {
+        "type": "action",
+        "description": "Click to edit patient details"
+      },
+      {
+        "type": "action",
+        "description": "Fill a different valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the patient update form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated contact information is displayed on the patient record"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Assign a practitioner type to a doctor profile",
+    "description": "An admin can assign an existing practitioner type to a doctor and the doctor profile reflects the assigned type.",
+    "category": "Practitioner Type Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open practitioner type configuration"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new practitioner type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique practitioner type name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Select a practitioner category"
+      },
+      {
+        "type": "action",
+        "description": "Select valid scheduling defaults"
+      },
+      {
+        "type": "action",
+        "description": "Save the practitioner type"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open doctor management"
+      },
+      {
+        "type": "action",
+        "description": "Open a doctor's profile"
+      },
+      {
+        "type": "action",
+        "description": "Select the newly created practitioner type for the doctor"
+      },
+      {
+        "type": "action",
+        "description": "Save the doctor profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the doctor profile shows the assigned practitioner type"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC024",
+    "title": "Session recording blocks negative material quantities",
+    "description": "This test verifies the session form prevents submission when a doctor enters a negative material quantity and shows a validation error.",
+    "category": "Session Recording & Financial Tracking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open a completed appointment from the doctor schedule"
+      },
+      {
+        "type": "action",
+        "description": "Click to create a session record"
+      },
+      {
+        "type": "action",
+        "description": "Select a performed service"
+      },
+      {
+        "type": "action",
+        "description": "Add a material line item"
+      },
+      {
+        "type": "action",
+        "description": "Select a material"
+      },
+      {
+        "type": "action",
+        "description": "Fill a negative number into the material quantity field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a material quantity validation error is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC025",
+    "title": "Batch-send pending reminders from admin portal",
+    "description": "An admin can run a batch reminder send for upcoming appointments and pending notifications update to sent status in the UI.",
+    "category": "Notifications (Reminders & Confirmations)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open appointment management"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create an appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing patient for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a doctor for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid appointment date within the reminder window"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid appointment time"
+      },
+      {
+        "type": "action",
+        "description": "Save the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open notifications administration"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to run a batch reminder send"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pending notification list shows reminders marked as sent"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC026",
+    "title": "Superadmin can toggle a feature flag and related UI behavior changes",
+    "description": "Verifies a Superadmin can toggle a feature flag and the related UI behavior reflects the new flag state.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open feature flags"
+      },
+      {
+        "type": "action",
+        "description": "Toggle a feature flag"
+      },
+      {
+        "type": "action",
+        "description": "Save the feature flag changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the related UI behavior reflects the new feature flag state"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC027",
+    "title": "Export report results to CSV",
+    "description": "Verifies an accountant can export the currently filtered report to CSV and a download is initiated.",
+    "category": "Financial Reports & CSV Export",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the reports module"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date range for the report"
+      },
+      {
+        "type": "action",
+        "description": "Run the session report"
+      },
+      {
+        "type": "action",
+        "description": "Request CSV export for the current report results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CSV export started indication is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC028",
+    "title": "Create a practitioner type with scheduling defaults and permissions",
+    "description": "An admin can define a practitioner type with scheduling defaults and permission/feature flags and see it listed.",
+    "category": "Practitioner Type Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open practitioner type configuration"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new practitioner type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique practitioner type name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Select a practitioner category"
+      },
+      {
+        "type": "action",
+        "description": "Select valid scheduling defaults"
+      },
+      {
+        "type": "action",
+        "description": "Select at least one permission or feature flag"
+      },
+      {
+        "type": "action",
+        "description": "Save the practitioner type"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new practitioner type appears in the practitioner type list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC029",
+    "title": "Create an appointment reminder notification from assistant portal",
+    "description": "An assistant can create a reminder for a scheduled appointment and the notification is recorded with its method and content.",
+    "category": "Notifications (Reminders & Confirmations)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open patient management"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new patient"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid patient name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Save the patient"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open appointment scheduling"
+      },
+      {
+        "type": "action",
+        "description": "Select the newly created patient for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a doctor for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid appointment date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid appointment time"
+      },
+      {
+        "type": "action",
+        "description": "Save the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open notifications"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a reminder notification"
+      },
+      {
+        "type": "action",
+        "description": "Select the scheduled appointment to notify"
+      },
+      {
+        "type": "action",
+        "description": "Select a notification method"
+      },
+      {
+        "type": "action",
+        "description": "Fill a message into the notification content field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the notification"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new notification appears in the notification list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC030",
+    "title": "Superadmin can re-enable a previously disabled module and navigation restores",
+    "description": "Verifies a Superadmin can re-enable a module for a role and the role’s portal navigation shows the module again.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open module management"
+      },
+      {
+        "type": "action",
+        "description": "Enable one module for a selected role"
+      },
+      {
+        "type": "action",
+        "description": "Save the module visibility changes"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the affected role’s portal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the enabled module is available in the affected role’s navigation"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "Login form blocks empty submission",
+    "description": "A user cannot submit the login form with missing required fields and sees inline validation errors.",
+    "category": "Authentication and Session Restore",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify required-field validation errors are visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "Prevent user creation when required fields are missing",
+    "description": "An admin cannot create a user when required fields are incomplete and validation feedback is shown.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open user management"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new user"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Leave the email field empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the user creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a required-field validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user creation form remains open"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Doctor can upload a before photo to a patient file",
+    "description": "This test verifies a doctor can open a patient file and upload a before photo so the photo appears in the before photos section.",
+    "category": "Patient File Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the patient list"
+      },
+      {
+        "type": "action",
+        "description": "Open a patient file for a listed patient"
+      },
+      {
+        "type": "action",
+        "description": "Click to add a before photo"
+      },
+      {
+        "type": "action",
+        "description": "Select an image file for upload"
+      },
+      {
+        "type": "action",
+        "description": "Submit the photo upload"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a new before photo item is displayed in the patient file"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Block applying an invalid or expired coupon code",
+    "description": "Verifies the session form shows a validation error and prevents applying a coupon when the entered code is invalid or expired.",
+    "category": "Coupon and Discount Operations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedule or daily calendar view"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment from today"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient file for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new session record"
+      },
+      {
+        "type": "action",
+        "description": "Enter a clearly invalid coupon code into the coupon field"
+      },
+      {
+        "type": "action",
+        "description": "Request a coupon preview"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a coupon validation error is visible and the coupon is not applied"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Doctor can add a prescription in a patient file",
+    "description": "This test verifies a doctor can add a prescription with medication, dosage, and notes and see the prescription listed in the patient file.",
+    "category": "Patient File Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open the patient list"
+      },
+      {
+        "type": "action",
+        "description": "Open a patient file for a listed patient"
+      },
+      {
+        "type": "action",
+        "description": "Click to add a prescription"
+      },
+      {
+        "type": "action",
+        "description": "Fill a medication name into the medication field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid dosage into the dosage field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a short note into the notes field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the prescription form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new prescription is listed in the patient file"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "Edit an existing coupon from the coupons list",
+    "description": "Verifies an admin can edit an existing coupon and the updated coupon details are reflected in the coupons list.",
+    "category": "Coupon and Discount Operations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the coupons module"
+      },
+      {
+        "type": "action",
+        "description": "Open the create coupon form"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique coupon code into the coupon code field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid coupon type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid coupon value into the value field"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity start date within an allowed range"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity end date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the coupon"
+      },
+      {
+        "type": "action",
+        "description": "Open the newly created coupon for editing"
+      },
+      {
+        "type": "action",
+        "description": "Change the coupon value to a different valid value"
+      },
+      {
+        "type": "action",
+        "description": "Save the coupon changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the coupons list reflects the updated coupon details"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Delete a coupon and ensure it no longer appears in the list",
+    "description": "Verifies an admin can delete a coupon and it is removed from the coupons list.",
+    "category": "Coupon and Discount Operations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the coupons module"
+      },
+      {
+        "type": "action",
+        "description": "Open the create coupon form"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique coupon code into the coupon code field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid coupon type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid coupon value into the value field"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity start date within an allowed range"
+      },
+      {
+        "type": "action",
+        "description": "Select a validity end date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the coupon"
+      },
+      {
+        "type": "action",
+        "description": "Delete the newly created coupon"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion in the app confirmation UI"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deleted coupon no longer appears in the coupons list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Reject invalid email format during user creation",
+    "description": "An admin is blocked from creating a user with an invalid email format and a validation error is shown.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open user management"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new user"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid full name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill an invalid email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Select a role for the new user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the user creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an email format validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no new user is added to the user list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Module management changes persist after leaving and returning to module management",
+    "description": "Verifies that saved module visibility configuration persists after navigating away and returning to module management.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open module management"
+      },
+      {
+        "type": "action",
+        "description": "Disable one module for a selected role"
+      },
+      {
+        "type": "action",
+        "description": "Save the module visibility changes"
+      },
+      {
+        "type": "action",
+        "description": "Click to navigate away to another superadmin section"
+      },
+      {
+        "type": "action",
+        "description": "Click to open module management"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the previously saved module visibility change is still applied"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Prevent saving a practitioner type when required fields are missing",
+    "description": "An admin cannot save a practitioner type without required fields and validation feedback is shown.",
+    "category": "Practitioner Type Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open practitioner type configuration"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a new practitioner type"
+      },
+      {
+        "type": "action",
+        "description": "Leave the name field empty"
+      },
+      {
+        "type": "action",
+        "description": "Save the practitioner type"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a required-field validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the practitioner type is not added to the practitioner type list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "Prevent using a negative material quantity in a session",
+    "description": "Verifies the session form blocks saving when a material usage quantity is negative and shows a validation error.",
+    "category": "Materials & Tools Inventory",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedule or daily calendar view"
+      },
+      {
+        "type": "action",
+        "description": "Open an appointment from today"
+      },
+      {
+        "type": "action",
+        "description": "Open the patient file for the appointment"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new session record"
+      },
+      {
+        "type": "action",
+        "description": "Add a material usage line item to the session"
+      },
+      {
+        "type": "action",
+        "description": "Select any available material"
+      },
+      {
+        "type": "action",
+        "description": "Fill a negative number into the material quantity field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a quantity validation error is visible and the session is not saved"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC042",
+    "title": "Require required fields before submitting a notification",
+    "description": "An assistant cannot submit a reminder/confirmation notification without required information and validation feedback is shown.",
+    "category": "Notifications (Reminders & Confirmations)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open notifications"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to create a notification"
+      },
+      {
+        "type": "action",
+        "description": "Leave the appointment selection empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the notification"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a required-field validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the notification is not added to the notification list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC043",
+    "title": "Feature flag changes persist after leaving and returning to feature flags",
+    "description": "Verifies that a saved feature flag state persists after navigating away and returning to the feature flags page/section.",
+    "category": "System Administration (Superadmin)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click to open feature flags"
+      },
+      {
+        "type": "action",
+        "description": "Toggle a feature flag"
+      },
+      {
+        "type": "action",
+        "description": "Save the feature flag changes"
+      },
+      {
+        "type": "action",
+        "description": "Click to navigate away to another superadmin section"
+      },
+      {
+        "type": "action",
+        "description": "Click to open feature flags"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the previously saved feature flag state is still applied"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC044",
+    "title": "Reset password with matching confirmation and return to login",
+    "description": "A user can set a new password on the reset password page and is returned to the login screen with a confirmation visible.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid new password into the new password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the same new password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset password form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password reset confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is returned to the login screen"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC045",
+    "title": "Request a password reset from the forgot password page",
+    "description": "A user can submit an email address to request a password reset and sees a confirmation state.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /forgot-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with reset.user@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Submit the password reset request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a reset request confirmation is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC046",
+    "title": "Block reset password when confirmation does not match",
+    "description": "A user cannot reset their password when the confirmation does not match and sees a validation error.",
+    "category": "Password Recovery",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /reset-password"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid new password into the new password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a different password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reset password form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password confirmation mismatch error is visible"
+      }
+    ],
+    "priority": "Low"
+  }
+]

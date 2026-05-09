@@ -14,6 +14,14 @@ import { couponService } from '../../lib/services/couponService';
 import { formatLocalDateYYYYMMDD } from '../../lib/date';
 import { appointmentService } from '../../lib/services/appointmentService';
 
+function toBackendAssetUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  const apiBase = (((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).trim();
+  if (!apiBase) return path;
+  const origin = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+  return `${origin}${path}`;
+}
+
 function parseFileDates(file: PatientFile): PatientFile {
   return {
     ...file,
@@ -1016,7 +1024,7 @@ export default function PatientFileView({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {photosSorted.map((photo) => (
                     <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <img src={photo.url.startsWith('http') ? photo.url : `${(((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).replace(/\/api\/v1\/?$/, '') || window.location.origin}${photo.url}`} alt={photo.type} className="w-full h-48 object-cover" />
+                      <img src={toBackendAssetUrl(photo.url)} alt={photo.type} className="w-full h-48 object-cover" />
                       <div className="p-3">
                         <div className="flex justify-between items-center mb-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -1129,7 +1137,7 @@ export default function PatientFileView({
                 <div className="space-y-3">
                   {attachments.map((a) => (
                     <div key={a.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
-                      <a href={a.path.startsWith('http') ? a.path : `${(((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).replace(/\/api\/v1.*$/, '')}${a.path}`} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
+                      <a href={toBackendAssetUrl(a.path)} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
                         {a.name}
                       </a>
                       <button

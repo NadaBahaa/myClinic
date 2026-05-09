@@ -26,6 +26,11 @@ export default defineConfig({
         target: API_PROXY_TARGET,
         changeOrigin: true,
       },
+      // Serve uploaded media from Laravel storage through Vite in development.
+      '/storage': {
+        target: API_PROXY_TARGET,
+        changeOrigin: true,
+      },
     },
   },
 })

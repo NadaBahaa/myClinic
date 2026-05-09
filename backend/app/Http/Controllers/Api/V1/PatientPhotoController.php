@@ -27,7 +27,7 @@ class PatientPhotoController extends Controller
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
 
         $request->validate([
-            'photo'      => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'photo'      => 'required|file|mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/webp,image/heic,image/heif|max:10240',
             'type'       => 'required|in:before,after,during',
             'notes'      => 'nullable|string|max:500',
             'session_id' => 'nullable|exists:session_records,uuid',
