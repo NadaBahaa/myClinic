@@ -6,7 +6,10 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateMaterialOrToolRequest extends FormRequest
 {
-    public function authorize(): bool { return in_array($this->user()?->role, ['admin', 'doctor']); }
+    public function authorize(): bool
+    {
+        return in_array($this->user()?->role, ['admin', 'superadmin', 'assistant', 'doctor'], true);
+    }
 
     public function rules(): array
     {

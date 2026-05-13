@@ -8,6 +8,7 @@ import {
   Clock,
   Bell,
   FolderOpen,
+  Package,
 } from "lucide-react";
 import { useAuth } from "../App";
 import type { Appointment } from "./CalendarView";
@@ -15,6 +16,7 @@ import DailyCalendar from "./DailyCalendar";
 import MonthlyCalendar from "./MonthlyCalendar";
 import PatientsOfDayView from "./PatientsOfDayView";
 import PatientsView from "./PatientsView";
+import MaterialsToolsView from "./MaterialsToolsView";
 import { appointmentService } from "../../lib/services/appointmentService";
 import { toast } from "sonner";
 import { formatLocalDateYYYYMMDD } from "../../lib/date";
@@ -58,7 +60,7 @@ function toCalendarAppointment(api: {
 
 export default function DoctorPortal() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"calendar" | "patients-day" | "my-patients">("calendar");
+  const [activeTab, setActiveTab] = useState<"calendar" | "patients-day" | "my-patients" | "materials-tools">("calendar");
   const [view, setView] = useState<"daily" | "monthly">("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -121,6 +123,7 @@ export default function DoctorPortal() {
   const mv = user.moduleVisibility ?? {};
   const showCalendarModule = mv.calendar !== false && user.permissions.showCalendar;
   const showPatientsModule = mv.patients !== false && user.permissions.showPatients;
+  const showMaterialsModule = mv.materials_tools !== false && user.permissions.showMaterialsTools;
   const showDailyView = showCalendarModule;
   const showMonthlyView = showCalendarModule;
 
@@ -209,7 +212,7 @@ export default function DoctorPortal() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" data-testid="doctor-portal">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 md:px-8 py-4">
         <div className="flex items-center justify-between">
@@ -274,8 +277,24 @@ export default function DoctorPortal() {
                 </button>
               </>
             )}
+            {showMaterialsModule && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("materials-tools")}
+                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                  activeTab === "materials-tools"
+                    ? "border-pink-600 text-pink-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <Package className="w-5 h-5" />
+                Materials & Tools
+              </button>
+            )}
           </div>
         </div>
+
+        {showMaterialsModule && activeTab === "materials-tools" && <MaterialsToolsView />}
 
         {/* Patients of the Day Tab */}
         {showPatientsModule && activeTab === "patients-day" && (

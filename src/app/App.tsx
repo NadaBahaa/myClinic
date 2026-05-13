@@ -1,7 +1,7 @@
-import { useState, createContext, useContext, useEffect } from 'react';
+import { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import Landing from './components/Landing';
 import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
@@ -14,7 +14,8 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import type { SystemUser, UserPermissions } from './components/UserDetailModal';
 import { PractitionerTypeProvider } from './contexts/PractitionerTypeContext';
 import { authService } from '../lib/services/authService';
-import { getToken } from '../lib/api';
+import { dispatchAuthSessionChanged, getToken } from '../lib/api';
+import { resolveIdleLogoutMs, useIdleLogout } from '../lib/useIdleLogout';
 
 // Types
 export type UserRole = 'superadmin' | 'admin' | 'doctor' | 'assistant' | 'accountant' | null;
@@ -51,55 +52,157 @@ export const useAuth = () => {
   return context;
 };
 
+type PageState =
+  | 'landing'
+  | 'login'
+  | 'forgot-password'
+  | 'reset-password'
+  | 'admin'
+  | 'doctor'
+  | 'assistant'
+  | 'accountant'
+  | 'superadmin';
+
+function roleToDashboardPage(role: UserRole): PageState | null {
+  if (!role) return null;
+  if (role === 'superadmin') return 'superadmin';
+  if (role === 'admin') return 'admin';
+  if (role === 'doctor') return 'doctor';
+  if (role === 'assistant') return 'assistant';
+  if (role === 'accountant') return 'accountant';
+  return null;
+}
+
+function roleToPath(role: UserRole): string {
+  if (!role) return '/';
+  if (role === 'superadmin') return '/superadmin';
+  if (role === 'admin') return '/admin';
+  if (role === 'doctor') return '/doctor';
+  if (role === 'assistant') return '/assistant';
+  if (role === 'accountant') return '/accountant';
+  return '/';
+}
+
+function pathToDashboardPage(path: string): PageState | null {
+  if (path === '/admin') return 'admin';
+  if (path === '/doctor' || path === '/appointments') return 'doctor';
+  if (path === '/assistant') return 'assistant';
+  if (path === '/accountant') return 'accountant';
+  if (path === '/superadmin') return 'superadmin';
+  return null;
+}
+
+function canRoleAccessPage(page: PageState, role: UserRole): boolean {
+  if (!role) return false;
+  if (page === 'admin') return role === 'admin';
+  if (page === 'doctor') return role === 'doctor';
+  if (page === 'assistant') return role === 'assistant';
+  if (page === 'accountant') return role === 'accountant';
+  if (page === 'superadmin') return role === 'superadmin';
+  return false;
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState<'landing' | 'login' | 'forgot-password' | 'reset-password' | 'admin' | 'doctor' | 'assistant' | 'accountant' | 'superadmin'>('landing');
+  const [currentPage, setCurrentPage] = useState<PageState>('landing');
   const [allUsers, setAllUsers] = useState<SystemUser[]>([]);
 
-  // Check for reset-password link from email (e.g. /reset-password?token=...&email=...)
-  useEffect(() => {
+  const goToDashboard = useCallback((role: UserRole) => {
+    const page = roleToDashboardPage(role);
+    if (!page) return;
+    setCurrentPage(page);
+    window.history.replaceState({}, '', roleToPath(role));
+  }, []);
+
+  /** Sync URL → SPA state (logged-in role guards, wrong-role redirects). */
+  const syncLocationToState = useCallback(() => {
     const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
+
     if (path === '/reset-password' && params.get('token') && params.get('email')) {
       setCurrentPage('reset-password');
+      return;
     }
-  }, []);
+
+    if (!user) {
+      if (path === '/login') setCurrentPage('login');
+      else if (path === '/forgot-password') setCurrentPage('forgot-password');
+      else setCurrentPage('landing');
+      return;
+    }
+
+    const dash = pathToDashboardPage(path);
+    if (dash && canRoleAccessPage(dash, user.role)) {
+      setCurrentPage(dash);
+      return;
+    }
+    if (dash && !canRoleAccessPage(dash, user.role)) {
+      const correct = roleToPath(user.role);
+      window.history.replaceState({}, '', correct);
+      setCurrentPage(roleToDashboardPage(user.role)!);
+      return;
+    }
+    if (path === '/login') {
+      window.history.replaceState({}, '', roleToPath(user.role));
+      setCurrentPage(roleToDashboardPage(user.role)!);
+      return;
+    }
+    if (path === '/' || path === '') {
+      window.history.replaceState({}, '', roleToPath(user.role));
+      setCurrentPage(roleToDashboardPage(user.role)!);
+      return;
+    }
+    window.history.replaceState({}, '', roleToPath(user.role));
+    setCurrentPage(roleToDashboardPage(user.role)!);
+  }, [user]);
+
+  useEffect(() => {
+    syncLocationToState();
+  }, [syncLocationToState]);
+
+  useEffect(() => {
+    const onPop = () => syncLocationToState();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [syncLocationToState]);
 
   // Restore session on mount if token exists in localStorage
   useEffect(() => {
     if (getToken()) {
-      authService.me()
-        .then(me => {
+      authService
+        .me()
+        .then((me) => {
           setUser(me);
-          navigateForRole(me.role);
+          goToDashboard(me.role);
+          dispatchAuthSessionChanged();
         })
         .catch(() => {
-          // Token invalid/expired — stay on landing
+          setAllUsers([]);
+          if (!getToken()) {
+            dispatchAuthSessionChanged();
+          }
         });
     }
 
     // Handle 401 Unauthorized from any API call
     const handle401 = () => {
       setUser(null);
+      setAllUsers([]);
       setCurrentPage('landing');
+      window.history.replaceState({}, '', '/');
+      dispatchAuthSessionChanged();
     };
     window.addEventListener('auth:unauthorized', handle401);
     return () => window.removeEventListener('auth:unauthorized', handle401);
-  }, []);
-
-  const navigateForRole = (role: UserRole) => {
-    if (role === 'superadmin') setCurrentPage('superadmin');
-    else if (role === 'admin') setCurrentPage('admin');
-    else if (role === 'doctor') setCurrentPage('doctor');
-    else if (role === 'assistant') setCurrentPage('assistant');
-    else if (role === 'accountant') setCurrentPage('accountant');
-  };
+  }, [goToDashboard]);
 
   const login = async (email: string, password: string): Promise<LoginResult> => {
     try {
       const { user: me } = await authService.login(email, password);
+      setAllUsers([]);
       setUser(me);
-      navigateForRole(me.role);
+      goToDashboard(me.role);
+      dispatchAuthSessionChanged();
       return { ok: true };
     } catch (e) {
       const msg =
@@ -110,32 +213,73 @@ function App() {
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     authService.logout().finally(() => {
       setUser(null);
+      setAllUsers([]);
       setCurrentPage('landing');
+      window.history.replaceState({}, '', '/');
+      dispatchAuthSessionChanged();
     });
-  };
+  }, []);
+
+  const idleLogoutMs = resolveIdleLogoutMs();
+  const handleIdleLogout = useCallback(() => {
+    toast.info('You were logged out due to inactivity.');
+    logout();
+  }, [logout]);
+
+  useIdleLogout({
+    enabled: Boolean(user) && idleLogoutMs > 0,
+    idleMs: idleLogoutMs,
+    onIdle: handleIdleLogout,
+  });
 
   const updateAllUsers = (users: SystemUser[]) => {
     setAllUsers(users);
   };
 
+  const openLandingLogin = () => {
+    setCurrentPage('login');
+    window.history.pushState({}, '', '/login');
+  };
+
   const renderPage = () => {
     if (currentPage === 'landing') {
-      return <Landing onLoginClick={() => setCurrentPage('login')} />;
+      return <Landing onLoginClick={openLandingLogin} />;
     }
     if (currentPage === 'login') {
-      return <Login onBack={() => setCurrentPage('landing')} onForgotPassword={() => setCurrentPage('forgot-password')} />;
+      return (
+        <Login
+          onBack={() => {
+            setCurrentPage('landing');
+            window.history.replaceState({}, '', '/');
+          }}
+          onForgotPassword={() => {
+            setCurrentPage('forgot-password');
+            window.history.replaceState({}, '', '/forgot-password');
+          }}
+        />
+      );
     }
     if (currentPage === 'forgot-password') {
-      return <ForgotPassword onBack={() => setCurrentPage('login')} />;
+      return (
+        <ForgotPassword
+          onBack={() => {
+            setCurrentPage('login');
+            window.history.replaceState({}, '', '/login');
+          }}
+        />
+      );
     }
     if (currentPage === 'reset-password') {
       const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
       return (
         <ResetPassword
-          onBack={() => setCurrentPage('login')}
+          onBack={() => {
+            setCurrentPage('login');
+            window.history.replaceState({}, '', '/login');
+          }}
           token={params.get('token')}
           email={params.get('email')}
         />
@@ -156,7 +300,7 @@ function App() {
     if (currentPage === 'superadmin' && user?.role === 'superadmin') {
       return <SuperAdminDashboard />;
     }
-    return <Landing onLoginClick={() => setCurrentPage('login')} />;
+    return <Landing onLoginClick={openLandingLogin} />;
   };
 
   return (

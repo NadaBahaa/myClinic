@@ -73,9 +73,6 @@ Route::prefix('v1')->group(function () {
 
             Route::apiResource('services', ServiceController::class)
                 ->only(['store', 'update', 'destroy']);
-
-            Route::apiResource('materials-tools', MaterialOrToolController::class)
-                ->only(['store', 'update', 'destroy']);
         });
 
         // ── All authenticated users ───────────────────────────────────────
@@ -95,9 +92,8 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('services', ServiceController::class)
             ->only(['index', 'show']);
 
-        // Materials & Tools (read)
-        Route::apiResource('materials-tools', MaterialOrToolController::class)
-            ->only(['index', 'show']);
+        // Materials & Tools (CUD: role middleware on controller)
+        Route::apiResource('materials-tools', MaterialOrToolController::class);
 
         // Coupon preview (any authenticated user booking a session)
         Route::post('coupons/preview', [CouponController::class, 'preview']);

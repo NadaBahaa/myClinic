@@ -58,7 +58,7 @@ class PatientFileAttachmentController extends Controller
         return response()->json([
             'id'        => $attachment->uuid,
             'name'      => $attachment->name,
-            'path'      => $attachment->path,
+            'path'      => '/storage/'.$attachment->path,
             'mimeType'  => $attachment->mime_type,
             'createdAt' => $attachment->created_at?->toIso8601String(),
         ], 201);

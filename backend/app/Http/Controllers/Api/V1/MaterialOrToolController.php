@@ -12,6 +12,11 @@ use Illuminate\Http\Request;
 
 class MaterialOrToolController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('role:admin,superadmin,assistant,doctor')->only(['store', 'update', 'destroy']);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = MaterialOrTool::query();

@@ -13,13 +13,39 @@ function resolveApiBaseUrl(): string {
   return 'http://localhost/Beauty%20Clinic%20Management%20App%20(Final-2)/backend/public/api/v1';
 }
 
+/**
+ * Laravel `public/` URL prefix (no trailing slash): same host as the JSON API without `/api/v1`.
+ * Empty string in Vite dev → use relative `/storage/...` and the dev-server `/storage` proxy.
+ * Uses the same rules as the JSON API base URL so `/storage` resolves like `/api/v1` when `VITE_API_BASE_URL` is unset.
+ */
+export function resolveLaravelPublicOrigin(): string {
+  const base = resolveApiBaseUrl();
+  return base.replace(/\/api\/v1\/?$/i, '').replace(/\/$/, '');
+}
+
 const BASE_URL = resolveApiBaseUrl();
 
 const TOKEN_KEY = 'beauty_clinic_token';
 const inflightGetRequests = new Map<string, Promise<unknown>>();
 const recentGetCache = new Map<string, { ts: number; data: unknown }>();
 const rateLimitedUntil = new Map<string, number>();
-const GET_DEDUPE_WINDOW_MS = 800;
+/** Same-path GET coalescing window (avoids burst duplicate calls from remounts / Strict Mode). */
+const GET_DEDUPE_WINDOW_MS = 4000;
+
+/** Fired after login, logout, or session restore so listeners can reload auth-dependent data. */
+export const AUTH_SESSION_CHANGED = 'auth:session-changed';
+
+export function dispatchAuthSessionChanged(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(AUTH_SESSION_CHANGED));
+}
+
+/** Clears GET dedupe / rate-limit maps so the next user never sees cached responses. */
+export function clearApiResponseCaches(): void {
+  inflightGetRequests.clear();
+  recentGetCache.clear();
+  rateLimitedUntil.clear();
+}
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -31,6 +57,7 @@ export function setToken(token: string): void {
 
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  clearApiResponseCaches();
 }
 
 type RequestOptions = {
@@ -85,49 +112,68 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   const execute = async (): Promise<T> => {
-  const token = getToken();
+    const maxAttempts = isGetWithoutBody ? 4 : 1;
 
-  const headers: Record<string, string> = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const token = getToken();
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
-  const response = await fetch(requestUrl, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
-  // Handle 401 — token expired/invalid
-  if (response.status === 401) {
-    removeToken();
-    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-    throw new Error('Unauthorized');
-  }
+      const response = await fetch(requestUrl, {
+        method: options.method ?? 'GET',
+        headers,
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      });
 
-  // Parse JSON for all responses
-  const contentType = response.headers.get('content-type') ?? '';
-  const data = contentType.includes('application/json') ? await response.json() : null;
+      const contentType = response.headers.get('content-type') ?? '';
+      const data = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
 
-  if (!response.ok) {
-    if (response.status === 429 && isGetWithoutBody) {
-      const retryAfterHeader = response.headers.get('Retry-After');
-      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : NaN;
-      const cooldownMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
-        ? retryAfterSeconds * 1000
-        : 2000;
-      rateLimitedUntil.set(dedupeKey, Date.now() + cooldownMs);
+      if (response.status === 401) {
+        const loginFail = path === '/auth/login' && method === 'POST';
+        if (loginFail) {
+          throw new Error(extractApiErrorMessage(data, 401));
+        }
+        removeToken();
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+        throw new Error(extractApiErrorMessage(data, 401) || 'Unauthorized');
+      }
+
+      if (response.ok) {
+        return data as T;
+      }
+
+      if (response.status === 429 && isGetWithoutBody && attempt < maxAttempts - 1) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : NaN;
+        const waitMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? Math.min(retryAfterSeconds * 1000, 30_000)
+          : Math.min(1500 * 2 ** attempt, 10_000);
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        continue;
+      }
+
+      if (response.status === 429 && isGetWithoutBody) {
+        const retryAfterHeader = response.headers.get('Retry-After');
+        const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : NaN;
+        const cooldownMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? retryAfterSeconds * 1000
+          : 3000;
+        rateLimitedUntil.set(dedupeKey, Date.now() + cooldownMs);
+      }
+
+      const message = extractApiErrorMessage(data, response.status);
+      throw new Error(message);
     }
-    const message = extractApiErrorMessage(data, response.status);
-    throw new Error(message);
-  }
 
-  return data as T;
+    throw new Error('Too many requests. Please wait a moment and try again.');
   };
 
   if (!isGetWithoutBody) {

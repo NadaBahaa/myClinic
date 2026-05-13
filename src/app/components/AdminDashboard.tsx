@@ -92,7 +92,8 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 relative">
+      <main className="flex-1 p-4 md:p-8 relative" data-testid="admin-dashboard">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">Admin Dashboard</h1>
         {/* Notification Bell - Fixed Position */}
         <button
           onClick={() => setShowNotifications(!showNotifications)}

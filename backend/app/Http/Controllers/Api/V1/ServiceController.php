@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
 use App\Http\Resources\ServiceResource;
+use App\Models\MaterialOrTool;
 use App\Models\PractitionerType;
 use App\Models\Service;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,7 @@ class ServiceController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Service::with('practitionerTypes');
+        $query = Service::with(['practitionerTypes', 'materials']);
 
         if ($category = $request->query('category')) {
             $query->where('category', $category);
@@ -52,14 +53,18 @@ class ServiceController extends Controller
             $service->practitionerTypes()->sync($ptIds);
         }
 
-        $service->load('practitionerTypes');
+        if ($request->has('defaultMaterials')) {
+            $this->syncServiceMaterials($service, $request->input('defaultMaterials'));
+        }
+
+        $service->load(['practitionerTypes', 'materials']);
 
         return response()->json(new ServiceResource($service), 201);
     }
 
     public function show(string $uuid): JsonResponse
     {
-        $service = Service::where('uuid', $uuid)->with('practitionerTypes')->firstOrFail();
+        $service = Service::where('uuid', $uuid)->with(['practitionerTypes', 'materials'])->firstOrFail();
 
         return response()->json(new ServiceResource($service));
     }
@@ -80,7 +85,11 @@ class ServiceController extends Controller
             $service->practitionerTypes()->sync($ptIds);
         }
 
-        $service->load('practitionerTypes');
+        if ($request->has('defaultMaterials')) {
+            $this->syncServiceMaterials($service, $request->input('defaultMaterials'));
+        }
+
+        $service->load(['practitionerTypes', 'materials']);
 
         return response()->json(new ServiceResource($service));
     }
@@ -91,5 +100,31 @@ class ServiceController extends Controller
         $service->delete();
 
         return response()->json(['message' => 'Service deleted']);
+    }
+
+    /**
+     * @param  array<int, array{materialId?: string, defaultQuantity?: float|int}>|null  $links
+     */
+    private function syncServiceMaterials(Service $service, ?array $links): void
+    {
+        if ($links === null) {
+            return;
+        }
+
+        $sync = [];
+        foreach ($links as $row) {
+            $materialUuid = $row['materialId'] ?? null;
+            if (! $materialUuid) {
+                continue;
+            }
+            $material = MaterialOrTool::where('uuid', $materialUuid)->first();
+            if (! $material) {
+                continue;
+            }
+            $qty = isset($row['defaultQuantity']) ? (float) $row['defaultQuantity'] : 1.0;
+            $sync[$material->id] = ['default_quantity' => $qty];
+        }
+
+        $service->materials()->sync($sync);
     }
 }

@@ -1,4 +1,12 @@
-import { apiFetch } from '../api';
+import { apiFetch, unwrapLaravelData } from '../api';
+
+export interface ServiceDefaultMaterial {
+  materialId: string;
+  defaultQuantity: number;
+  name?: string;
+  unitPrice?: number;
+  unit?: string;
+}
 
 export interface ClinicService {
   id: string;
@@ -8,24 +16,30 @@ export interface ClinicService {
   price: number;
   description?: string;
   popular?: boolean;
-  practitionerTypeIds?: string[];
+  allowedPractitionerTypeIds?: string[];
+  defaultMaterials?: ServiceDefaultMaterial[];
 }
 
 export const serviceService = {
   async getAll(): Promise<ClinicService[]> {
-    return apiFetch<ClinicService[]>('/services');
+    const raw = await apiFetch<unknown>('/services');
+    const list = unwrapLaravelData<ClinicService[]>(raw);
+    return Array.isArray(list) ? list : [];
   },
 
   async get(uuid: string): Promise<ClinicService> {
-    return apiFetch<ClinicService>(`/services/${uuid}`);
+    const raw = await apiFetch<unknown>(`/services/${uuid}`);
+    return unwrapLaravelData<ClinicService>(raw);
   },
 
   async create(data: Partial<ClinicService>): Promise<ClinicService> {
-    return apiFetch<ClinicService>('/services', { method: 'POST', body: data });
+    const raw = await apiFetch<unknown>('/services', { method: 'POST', body: data });
+    return unwrapLaravelData<ClinicService>(raw);
   },
 
   async update(uuid: string, data: Partial<ClinicService>): Promise<ClinicService> {
-    return apiFetch<ClinicService>(`/services/${uuid}`, { method: 'PUT', body: data });
+    const raw = await apiFetch<unknown>(`/services/${uuid}`, { method: 'PUT', body: data });
+    return unwrapLaravelData<ClinicService>(raw);
   },
 
   async remove(uuid: string): Promise<void> {

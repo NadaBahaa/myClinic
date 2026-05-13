@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Upload, Image as ImageIcon, FileText, Plus, Trash2, 
-  DollarSign, Package, TrendingUp, Calendar, Edit2, Loader2, Tag
+  DollarSign, Package, TrendingUp, Calendar, Edit2, Loader2, Tag, Maximize2
 } from 'lucide-react';
 import { 
   PatientFile, SessionRecord, PatientPhoto, Prescription, 
@@ -13,13 +13,32 @@ import { materialService } from '../../lib/services/materialService';
 import { couponService } from '../../lib/services/couponService';
 import { formatLocalDateYYYYMMDD } from '../../lib/date';
 import { appointmentService } from '../../lib/services/appointmentService';
+import { resolveStorageAssetUrl } from '../../lib/assetUrl';
+import { normalizePatientPhoto } from '../../lib/patientPhoto';
+import { serviceService, type ClinicService } from '../../lib/services/serviceService';
 
-function toBackendAssetUrl(path: string): string {
-  if (path.startsWith('http')) return path;
-  const apiBase = (((import.meta as any).env?.VITE_API_BASE_URL ?? '') as string).trim();
-  if (!apiBase) return path;
-  const origin = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-  return `${origin}${path}`;
+function mergeSessionDefaultsFromService(
+  current: SessionMaterialUsage[],
+  defaults: { materialId: string; defaultQuantity: number }[] | undefined,
+  catalog: MaterialOrTool[],
+): SessionMaterialUsage[] {
+  if (!defaults?.length) return current;
+  const byId = new Map(current.map((m) => [m.materialId, { ...m }]));
+  for (const d of defaults) {
+    if (byId.has(d.materialId)) continue;
+    const mat = catalog.find((c) => c.id === d.materialId);
+    if (!mat) continue;
+    const qty = d.defaultQuantity;
+    const unitPrice = mat.unitPrice ?? 0;
+    byId.set(d.materialId, {
+      materialId: d.materialId,
+      materialName: mat.name,
+      quantity: qty,
+      unitPrice,
+      totalPrice: Math.round(unitPrice * qty * 100) / 100,
+    });
+  }
+  return Array.from(byId.values());
 }
 
 function parseFileDates(file: PatientFile): PatientFile {
@@ -30,10 +49,7 @@ function parseFileDates(file: PatientFile): PatientFile {
       ...s,
       date: new Date(s.date),
     })),
-    photos: (file.photos || []).map((p: PatientPhoto) => ({
-      ...p,
-      uploadedAt: new Date(p.uploadedAt),
-    })),
+    photos: (file.photos || []).map((p) => normalizePatientPhoto(p)),
     prescriptions: (file.prescriptions || []).map((r: Prescription) => ({
       ...r,
       prescribedAt: new Date(r.prescribedAt),
@@ -86,7 +102,9 @@ interface SessionModalProps {
 }
 
 function SessionModal({ session, patientName, performedBy, onClose, onSave }: SessionModalProps) {
-  const isEditing = !!session;
+  const isEditing = !!(session?.id);
+  const mergedDefaultsRef = useRef<string | null>(null);
+
   const [formData, setFormData] = useState<SessionRecord>(
     session || {
       id: '',
@@ -111,9 +129,23 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
 
   const [materials, setMaterials] = useState<MaterialOrTool[]>([]);
   const [materialsLoading, setMaterialsLoading] = useState(true);
+  const [servicesCatalog, setServicesCatalog] = useState<ClinicService[]>([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
   const [selectedMaterial, setSelectedMaterial] = useState('');
   const [materialQuantity, setMaterialQuantity] = useState(1);
   const [materialUnitPrice, setMaterialUnitPrice] = useState(0);
+
+  const syncNetProfit = (servicePrice: number, materialsUsed: SessionMaterialUsage[]) => {
+    const totalMaterialsCost = materialsUsed.reduce((sum, m) => sum + m.totalPrice, 0);
+    return {
+      totalMaterialsCost,
+      netProfit: Math.round((servicePrice - totalMaterialsCost) * 100) / 100,
+    };
+  };
+
+  useEffect(() => {
+    if (!session) mergedDefaultsRef.current = null;
+  }, [session]);
 
   useEffect(() => {
     materialService.getAll()
@@ -123,6 +155,14 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
       })
       .catch(() => toast.error('Failed to load materials/tools'))
       .finally(() => setMaterialsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    serviceService
+      .getAll()
+      .then(setServicesCatalog)
+      .catch(() => {})
+      .finally(() => setServicesLoading(false));
   }, []);
 
   useEffect(() => {
@@ -162,13 +202,32 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
     }
   }, [session, performedBy]);
 
-  const syncNetProfit = (servicePrice: number, materialsUsed: SessionMaterialUsage[]) => {
-    const totalMaterialsCost = materialsUsed.reduce((sum, m) => sum + m.totalPrice, 0);
-    return {
+  useEffect(() => {
+    if (!session || session.id) return;
+    if (materialsLoading || servicesLoading) return;
+    if (!session.serviceId || (session.materialsUsed?.length ?? 0) > 0) return;
+    const key = `${session.appointmentId ?? 'na'}-${session.serviceId}`;
+    if (mergedDefaultsRef.current === key) return;
+    const svc = servicesCatalog.find((s) => s.id === session.serviceId);
+    if (!svc?.defaultMaterials?.length || materials.length === 0) return;
+    const merged = mergeSessionDefaultsFromService([], svc.defaultMaterials, materials);
+    if (!merged.length) {
+      mergedDefaultsRef.current = key;
+      return;
+    }
+    const price = svc.price ?? 0;
+    setListPrice(price);
+    const { totalMaterialsCost, netProfit } = syncNetProfit(price, merged);
+    setFormData((prev) => ({
+      ...prev,
+      serviceName: prev.serviceName || svc.name,
+      servicePrice: price,
+      materialsUsed: merged,
       totalMaterialsCost,
-      netProfit: Math.round((servicePrice - totalMaterialsCost) * 100) / 100,
-    };
-  };
+      netProfit,
+    }));
+    mergedDefaultsRef.current = key;
+  }, [session, materialsLoading, servicesLoading, materials, servicesCatalog]);
 
   const handleListPriceChange = (value: number) => {
     setListPrice(value);
@@ -180,6 +239,32 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
       servicePrice: value,
       totalMaterialsCost,
       netProfit,
+    });
+  };
+
+  const handleCatalogServiceChange = (uuid: string) => {
+    if (!uuid) {
+      setFormData((prev) => ({ ...prev, serviceId: '' }));
+      return;
+    }
+    const svc = servicesCatalog.find((s) => s.id === uuid);
+    if (!svc) return;
+    setListPrice(svc.price ?? 0);
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setFormData((prev) => {
+      const merged = mergeSessionDefaultsFromService(prev.materialsUsed, svc.defaultMaterials, materials);
+      const price = svc.price ?? 0;
+      const { totalMaterialsCost, netProfit } = syncNetProfit(price, merged);
+      return {
+        ...prev,
+        serviceId: svc.id,
+        serviceName: svc.name,
+        servicePrice: price,
+        materialsUsed: merged,
+        totalMaterialsCost,
+        netProfit,
+      };
     });
   };
 
@@ -310,6 +395,31 @@ function SessionModal({ session, patientName, performedBy, onClose, onSave }: Se
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {!isEditing && (
+            <div>
+              <label className="block mb-2 text-gray-700">Service from catalog (optional)</label>
+              {servicesLoading ? (
+                <p className="text-sm text-gray-500">Loading services…</p>
+              ) : (
+                <select
+                  value={formData.serviceId}
+                  onChange={(e) => handleCatalogServiceChange(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-600"
+                >
+                  <option value="">Custom — type below</option>
+                  {servicesCatalog.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} (${(s.price ?? 0).toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Choosing a catalog service fills price and suggested materials/tools from the service setup.
+              </p>
+            </div>
+          )}
+
           {/* Service Details */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -534,6 +644,8 @@ export default function PatientFileView({
   const [attachments, setAttachments] = useState<{ id: string; name: string; path: string; mimeType?: string; sessionId?: string; createdAt: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [photoSortOrder, setPhotoSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoThumbError, setPhotoThumbError] = useState<Record<string, boolean>>({});
 
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SessionRecord | null>(null);
@@ -558,6 +670,18 @@ export default function PatientFileView({
       .catch(() => setLinkedAppointments([]))
       .finally(() => setAppointmentsLoading(false));
   }, [patientId, doctorId]);
+
+  useEffect(() => {
+    if (!photoPreviewUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPhotoPreviewUrl(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [photoPreviewUrl]);
+
+  const noAppointmentsForThisDoctor =
+    !appointmentsLoading && linkedAppointments.length === 0;
 
   const fileId = patientFile?.id;
 
@@ -616,18 +740,19 @@ export default function PatientFileView({
     const payload: Record<string, unknown> = {
       date: dateStr,
       appointmentId: session.appointmentId || undefined,
+      serviceId: session.serviceId || undefined,
       serviceName: session.serviceName,
       servicePrice: session.servicePrice,
       performedBy,
       notes,
       materialsUsed: session.materialsUsed.map((m) => ({ materialId: m.materialId, quantity: m.quantity, unitPrice: m.unitPrice })),
     };
-    if (!selectedSession && session.couponCode && session.originalServicePrice != null) {
+    if (!selectedSession?.id && session.couponCode && session.originalServicePrice != null) {
       payload.couponCode = session.couponCode;
       payload.originalServicePrice = session.originalServicePrice;
     }
     try {
-      if (selectedSession) {
+      if (selectedSession?.id) {
         await patientFileService.updateSession(fileId, selectedSession.id, { notes, date: dateStr as unknown as Date, performedBy });
         setPatientFile(prev => prev ? ({ ...prev, sessions: prev.sessions.map(s => s.id === session.id ? { ...session, date: typeof session.date === 'string' ? new Date(session.date) : session.date } : s) }) : null);
         toast.success('Session updated successfully');
@@ -659,17 +784,12 @@ export default function PatientFileView({
   const handlePhotoUpload = async (type: 'before' | 'after' | 'during', file: File, notes?: string) => {
     if (!fileId) return;
     try {
-      const created = await patientFileService.uploadPhoto(fileId, file, type, notes) as PatientPhoto & { uploadedAt?: string };
-      const newPhoto: PatientPhoto = {
-        id: created.id,
-        url: created.url,
-        type: created.type,
-        uploadedAt: created.uploadedAt ? new Date(created.uploadedAt) : new Date(),
-        uploadedBy: created.uploadedBy,
-        sessionId: created.sessionId,
-        notes: created.notes,
-      };
-      setPatientFile(prev => prev ? { ...prev, photos: [...prev.photos, newPhoto] } : null);
+      await patientFileService.uploadPhoto(fileId, file, type, notes);
+      const photos = await patientFileService.getPhotos(fileId);
+      setPatientFile((prev) =>
+        prev ? { ...prev, photos: photos.map(normalizePatientPhoto) } : null,
+      );
+      setPhotoThumbError({});
       toast.success('Photo uploaded successfully');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
@@ -734,7 +854,9 @@ export default function PatientFileView({
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl text-gray-900">{patientName}'s Medical File</h2>
-            <p className="text-sm text-gray-600">Managed by {doctorName}</p>
+            {!noAppointmentsForThisDoctor && (
+              <p className="text-sm text-gray-600">Managed by {doctorName}</p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -848,7 +970,7 @@ export default function PatientFileView({
                 {appointmentsLoading ? (
                   <div className="text-sm text-gray-500">Loading appointments…</div>
                 ) : linkedAppointments.length === 0 ? (
-                  <div className="text-sm text-gray-500">No appointments found for this doctor.</div>
+                  <div className="text-sm text-gray-500">No appointments found.</div>
                 ) : (
                   <div className="space-y-2">
                     {[...linkedAppointments]
@@ -917,10 +1039,11 @@ export default function PatientFileView({
                               </span>
                             )}
                           </div>
-                          {/* Doctor info from patient file */}
-                          <p className="text-xs text-gray-500 mt-1">
-                            Doctor: <span className="font-medium text-gray-700">{doctorName}</span>
-                          </p>
+                          {!noAppointmentsForThisDoctor && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Doctor: <span className="font-medium text-gray-700">{doctorName}</span>
+                            </p>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -1022,9 +1145,40 @@ export default function PatientFileView({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {photosSorted.map((photo) => (
-                    <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <img src={toBackendAssetUrl(photo.url)} alt={photo.type} className="w-full h-48 object-cover" />
+                  {photosSorted.map((photo) => {
+                    const src = resolveStorageAssetUrl(photo.url);
+                    return (
+                    <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                      <button
+                        type="button"
+                        className="relative block w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2"
+                        onClick={() => src && setPhotoPreviewUrl(src)}
+                        aria-label={`Preview ${photo.type} photo`}
+                      >
+                        {photoThumbError[photo.id] || !src ? (
+                          <div className="w-full h-48 flex flex-col items-center justify-center gap-2 bg-gray-100 text-gray-500 text-sm px-4 text-center">
+                            <ImageIcon className="w-10 h-10 opacity-50" />
+                            <span>Preview unavailable</span>
+                          </div>
+                        ) : (
+                          <span className="block w-full h-48 overflow-hidden bg-gray-100">
+                            <img
+                              src={src}
+                              alt={`${photo.type} photo`}
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
+                              onError={() =>
+                                setPhotoThumbError((prev) => ({ ...prev, [photo.id]: true }))
+                              }
+                            />
+                          </span>
+                        )}
+                        <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/55 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                          Preview
+                        </span>
+                      </button>
                       <div className="p-3">
                         <div className="flex justify-between items-center mb-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -1035,6 +1189,7 @@ export default function PatientFileView({
                             {photo.type.charAt(0).toUpperCase() + photo.type.slice(1)}
                           </span>
                           <button
+                            type="button"
                             onClick={() => handleDeletePhoto(photo.id)}
                             className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                           >
@@ -1045,9 +1200,12 @@ export default function PatientFileView({
                           {new Date(photo.uploadedAt).toLocaleDateString()}
                         </p>
                         <p className="text-xs text-gray-500">By {photo.uploadedBy}</p>
+                        {photo.notes ? (
+                          <p className="text-xs text-gray-600 mt-2 border-t border-gray-100 pt-2">{photo.notes}</p>
+                        ) : null}
                       </div>
                     </div>
-                  ))}
+                  );})}
                 </div>
               )}
             </div>
@@ -1135,35 +1293,95 @@ export default function PatientFileView({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {attachments.map((a) => (
-                    <div key={a.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center">
-                      <a href={toBackendAssetUrl(a.path)} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">
-                        {a.name}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!fileId || !confirm('Delete this attachment?')) return;
-                          try {
-                            await patientFileService.deleteAttachment(fileId, a.id);
-                            setAttachments(prev => prev.filter(x => x.id !== a.id));
-                            toast.success('Deleted');
-                          } catch {
-                            toast.error('Delete failed');
-                          }
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  {attachments.map((a) => {
+                    const attachmentHref = resolveStorageAssetUrl(a.path);
+                    const showThumb =
+                      Boolean(attachmentHref) && (a.mimeType?.startsWith('image/') ?? false);
+                    return (
+                      <div
+                        key={a.id}
+                        className="border border-gray-200 rounded-lg p-4 flex justify-between items-center gap-4"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          {showThumb ? (
+                            <a
+                              href={attachmentHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 w-20 h-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-100 block"
+                              aria-label={`Preview ${a.name}`}
+                            >
+                              <img
+                                src={attachmentHref}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            </a>
+                          ) : null}
+                          <a
+                            href={attachmentHref || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-pink-600 hover:underline truncate"
+                            onClick={(e) => {
+                              if (!attachmentHref) e.preventDefault();
+                            }}
+                          >
+                            {a.name}
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!fileId || !confirm('Delete this attachment?')) return;
+                            try {
+                              await patientFileService.deleteAttachment(fileId, a.id);
+                              setAttachments(prev => prev.filter(x => x.id !== a.id));
+                              toast.success('Deleted');
+                            } catch {
+                              toast.error('Delete failed');
+                            }
+                          }}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg shrink-0"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
+
+      {photoPreviewUrl ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photo preview"
+          onClick={() => setPhotoPreviewUrl(null)}
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 rounded-lg bg-white/10 p-2 text-white hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            onClick={() => setPhotoPreviewUrl(null)}
+            aria-label="Close preview"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={photoPreviewUrl}
+            alt="Full size preview"
+            className="max-h-[min(90vh,100%)] max-w-full object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
 
       {isSessionModalOpen && (
         <SessionModal

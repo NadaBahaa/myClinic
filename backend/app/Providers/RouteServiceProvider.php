@@ -25,7 +25,11 @@ class RouteServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            // SPA issues many parallel GETs (calendar, lookups, session). Default 60/min per key was too low.
+            $perMinute = (int) env('API_RATE_LIMIT_PER_MINUTE', 300);
+            $perMinute = max(60, min(2000, $perMinute));
+
+            return Limit::perMinute($perMinute)->by($request->user()?->id ?: $request->ip());
         });
 
         $this->routes(function () {

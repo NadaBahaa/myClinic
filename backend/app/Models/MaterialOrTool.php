@@ -31,4 +31,11 @@ class MaterialOrTool extends Model
     {
         return $this->hasMany(SessionMaterialUsage::class, 'material_id');
     }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'service_material', 'material_id', 'service_id')
+            ->withPivot('default_quantity')
+            ->withTimestamps();
+    }
 }

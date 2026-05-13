@@ -1,1 +1,371 @@
 .claude/*
+.pw-browsers/.links/20bbdacdb41f9874d4b71340314cffb36596be85
+.pw-browsers/chromium-1217/DEPENDENCIES_VALIDATED
+.pw-browsers/chromium-1217/INSTALLATION_COMPLETE
+.pw-browsers/chromium-1217/chrome-mac-arm64/ABOUT
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Google Chrome for Testing Framework
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Helpers
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Libraries
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Resources
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/Current
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Google Chrome for Testing Framework
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/app_mode_loader
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/chrome_crashpad_handler
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/web_app_shortcut_copier
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/MacOS/Google Chrome for Testing Helper (Alerts)
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/Resources/app.icns
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/Resources/Assets.car
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Alerts).app/Contents/Resources/base.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (GPU).app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (GPU).app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (GPU).app/Contents/MacOS/Google Chrome for Testing Helper (GPU)
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Plugin).app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Plugin).app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Plugin).app/Contents/MacOS/Google Chrome for Testing Helper (Plugin)
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper (Renderer).app/Contents/MacOS/Google Chrome for Testing Helper (Renderer)
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper.app/Contents/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper.app/Contents/PkgInfo
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Helpers/Google Chrome for Testing Helper.app/Contents/MacOS/Google Chrome for Testing Helper
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/libEGL.dylib
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/libGLESv2.dylib
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/libvk_swiftshader.dylib
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/vk_swiftshader_icd.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/IwaKeyDistribution/iwa-key-distribution.pb
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/IwaKeyDistribution/manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/MEIPreload/manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/MEIPreload/preloaded_data.pb
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/PrivacySandboxAttestationsPreloaded/manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/PrivacySandboxAttestationsPreloaded/privacy-sandbox-attestations.dat
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/WidevineCdm/LICENSE
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/WidevineCdm/manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Libraries/WidevineCdm/_platform_specific/mac_arm64/libwidevinecdm.dylib
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/app_mode-Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/chrome_100_percent.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/chrome_200_percent.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/gpu_shader_cache.bin
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/icudtl.dat
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/Info.plist
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/install.sh
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/product_logo_32.png
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/resources.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/v8_context_snapshot.arm64.bin
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/af.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/af_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/af_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/af_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/am.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/am_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/am_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/am_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ar.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ar_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ar_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ar_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bg.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bg_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bg_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bg_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bn.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bn_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bn_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/bn_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ca.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ca_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ca_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ca_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/cs.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/cs_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/cs_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/cs_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/da.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/da_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/da_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/da_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/de.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/de_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/de_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/de_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/el.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/el_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/el_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/el_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_GB.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_GB_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_GB_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_GB_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/en_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_419.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_419_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_419_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_419_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/es_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/et.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/et_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/et_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/et_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fa.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fa_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fa_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fa_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fi.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fi_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fi_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fi_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fil.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fil_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fil_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fil_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fr.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fr_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fr_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/fr_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/gu.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/gu_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/gu_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/gu_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/he.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/he_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/he_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/he_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hi.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hi_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hi_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hi_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hr.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hr_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hr_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hr_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hu.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hu_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hu_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/hu_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/id.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/id_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/id_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/id_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/it.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/it_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/it_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/it_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ja.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ja_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ja_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ja_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/kn.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/kn_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/kn_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/kn_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ko.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ko_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ko_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ko_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lt.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lt_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lt_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lt_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lv.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lv_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lv_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/lv_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ml.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ml_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ml_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ml_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/mr.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/mr_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/mr_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/mr_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ms.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ms_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ms_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ms_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nb.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nb_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nb_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nb_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nl.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nl_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nl_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/nl_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pl.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pl_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pl_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pl_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_BR.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_BR_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_BR_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_BR_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_PT.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_PT_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_PT_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/pt_PT_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ro.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ro_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ro_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ro_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ru.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ru_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ru_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ru_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sk.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sk_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sk_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sk_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sl.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sl_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sl_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sl_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sr.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sr_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sr_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sr_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sv.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sv_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sv_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sv_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sw.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sw_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sw_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/sw_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ta.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ta_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ta_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ta_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/te.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/te_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/te_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/te_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/th.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/th_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/th_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/th_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/tr.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/tr_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/tr_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/tr_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/uk.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/uk_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/uk_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/uk_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ur.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ur_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ur_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/ur_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/vi.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/vi_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/vi_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/vi_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_CN.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_CN_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_CN_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_CN_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_TW.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_TW_FEMININE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_TW_MASCULINE.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Frameworks/Google Chrome for Testing Framework.framework/Versions/147.0.7727.15/Resources/zh_TW_NEUTER.lproj/locale.pak
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/app.icns
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/Assets.car
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/scripting.sdef
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/af.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/am.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ar.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/bg.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/bn.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ca.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/com.google.chrome.for.testing.manifest/Contents/Resources/com.google.chrome.for.testing.manifest
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/com.google.chrome.for.testing.manifest/Contents/Resources/en.lproj/Localizable.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/cs.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/da.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/de.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/el.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/en.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/en_GB.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/es.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/es_419.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/et.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/fa.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/fi.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/fil.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/fr.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/gu.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/he.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/hi.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/hr.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/hu.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/id.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/it.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ja.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/kn.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ko.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/lt.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/lv.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ml.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/mr.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ms.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/nb.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/nl.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/pl.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/pt_BR.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/pt_PT.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ro.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ru.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/sk.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/sl.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/sr.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/sv.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/sw.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ta.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/te.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/th.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/tr.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/uk.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/ur.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/vi.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/zh_CN.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/Google Chrome for Testing.app/Contents/Resources/zh_TW.lproj/InfoPlist.strings
+.pw-browsers/chromium-1217/chrome-mac-arm64/PrivacySandboxAttestationsPreloaded/manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/PrivacySandboxAttestationsPreloaded/privacy-sandbox-attestations.dat
+.pw-browsers/chromium-1217/chrome-mac-arm64/resources/accessibility/reading_mode_gdocs_helper_manifest.json
+.pw-browsers/chromium-1217/chrome-mac-arm64/resources/accessibility/reading_mode_gdocs_helper/content.js
+.pw-browsers/chromium-1217/chrome-mac-arm64/resources/accessibility/reading_mode_gdocs_helper/gdocs_script.js
+.pw-browsers/chromium_headless_shell-1217/DEPENDENCIES_VALIDATED
+.pw-browsers/chromium_headless_shell-1217/INSTALLATION_COMPLETE
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/ABOUT
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/headless_command_resources.pak
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/headless_lib_data.pak
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/headless_lib_strings.pak
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/icudtl.dat
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/libEGL.dylib
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/libGLESv2.dylib
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/libvk_swiftshader.dylib
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/LICENSE.headless_shell
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/v8_context_snapshot.arm64.bin
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/vk_swiftshader_icd.json
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/PrivacySandboxAttestationsPreloaded/manifest.json
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/PrivacySandboxAttestationsPreloaded/privacy-sandbox-attestations.dat
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/resources/accessibility/reading_mode_gdocs_helper_manifest.json
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/resources/accessibility/reading_mode_gdocs_helper/content.js
+.pw-browsers/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/resources/accessibility/reading_mode_gdocs_helper/gdocs_script.js
+.pw-browsers/ffmpeg-1011/COPYING.LGPLv2.1
+.pw-browsers/ffmpeg-1011/DEPENDENCIES_VALIDATED
+.pw-browsers/ffmpeg-1011/ffmpeg-mac
+.pw-browsers/ffmpeg-1011/INSTALLATION_COMPLETE
+
+
+/testsprite_tests/*
+# testsprite_tests/__pycache__/*

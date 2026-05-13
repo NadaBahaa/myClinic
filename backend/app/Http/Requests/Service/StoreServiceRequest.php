@@ -19,6 +19,9 @@ class StoreServiceRequest extends FormRequest
             'popular'                     => 'boolean',
             'allowedPractitionerTypeIds'  => 'nullable|array',
             'allowedPractitionerTypeIds.*' => 'exists:practitioner_types,uuid',
+            'defaultMaterials'            => 'sometimes|array',
+            'defaultMaterials.*.materialId' => 'required|string|exists:materials_tools,uuid',
+            'defaultMaterials.*.defaultQuantity' => 'required|numeric|min:0.001|max:99999',
         ];
     }
 }

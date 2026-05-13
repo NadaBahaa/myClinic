@@ -1,49 +1,30 @@
 import asyncio
-from playwright import async_api
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from playwright.async_api import expect
 
+from support import doctor_open_emma_add_session, launch, login
+
+
 async def run_test():
-    pw = None
-    browser = None
-    context = None
-
+    pw = browser = context = None
     try:
-        # Start a Playwright session in asynchronous mode
-        pw = await async_api.async_playwright().start()
-
-        # Launch a Chromium browser in headless mode with custom arguments
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=[
-                "--window-size=1280,720",         # Set the browser window size
-                "--disable-dev-shm-usage",        # Avoid using /dev/shm which can cause issues in containers
-                "--ipc=host",                     # Use host-level IPC for better stability
-                "--single-process"                # Run the browser in a single process mode
-            ],
-        )
-
-        # Create a new browser context (like an incognito window)
-        context = await browser.new_context()
-        context.set_default_timeout(5000)
-
-        # Open a new page in the browser context
+        pw, browser, context = await launch()
         page = await context.new_page()
+        await login(page, "sarah@clinic.com", "doctor123")
 
-        # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:5173
-        await page.goto("http://localhost:5173")
-        
-        # -> Navigate directly to the login page (/login) to see if the SPA will render the authentication UI.
-        await page.goto("http://localhost:5173/login")
-        
-        # -> Wait for the SPA to finish loading; if nothing appears, reload the app root to attempt to recover the UI.
-        await page.goto("http://localhost:5173")
-        
-        # --> Assertions to verify final state
-        frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'New treatment session')]").nth(0).is_visible(), "The patient file should show the new treatment session in the timeline after saving."
-        await asyncio.sleep(5)
+        await doctor_open_emma_add_session(page)
+        modal = page.locator("div.fixed.inset-0").filter(has_text="Add Session for")
+        await modal.get_by_placeholder("Enter service name").fill("E2E Treatment Session")
+        await modal.locator('input[type="number"]').first.fill("99")
+        await modal.locator("form").get_by_role("button", name=re.compile(r"^Add Session$")).click()
 
+        await expect(page.get_by_text("Session added successfully")).to_be_visible()
+        await expect(page.get_by_text("Treatment Sessions", exact=False)).to_be_visible()
     finally:
         if context:
             await context.close()
@@ -52,5 +33,5 @@ async def run_test():
         if pw:
             await pw.stop()
 
+
 asyncio.run(run_test())
-    

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PractitionerType } from '../components/PractitionerTypeDetailModal';
 import { practitionerTypeService } from '../../lib/services/practitionerTypeService';
-import { getToken } from '../../lib/api';
+import { AUTH_SESSION_CHANGED, getToken } from '../../lib/api';
 
 interface PractitionerTypeContextType {
   practitionerTypes: PractitionerType[];
@@ -56,12 +56,25 @@ export function PractitionerTypeProvider({ children }: { children: ReactNode }) 
   };
 
   useEffect(() => {
-    loadFromApi();
+    const sync = () => {
+      if (!getToken()) {
+        setPractitionerTypes([]);
+        return;
+      }
+      loadFromApi();
+    };
 
-    // Reload when user logs in (auth:unauthorized cleared means they may log back in)
-    const onStorage = () => loadFromApi();
+    sync();
+
+    const onStorage = () => sync();
+    window.addEventListener(AUTH_SESSION_CHANGED, sync);
+    window.addEventListener('auth:unauthorized', sync);
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(AUTH_SESSION_CHANGED, sync);
+      window.removeEventListener('auth:unauthorized', sync);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const updatePractitionerTypes = (types: PractitionerType[]) => {

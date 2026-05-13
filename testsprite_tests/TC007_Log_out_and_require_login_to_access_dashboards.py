@@ -1,49 +1,27 @@
 import asyncio
-from playwright import async_api
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from playwright.async_api import expect
 
+from support import BASE, launch, login
+
+
 async def run_test():
-    pw = None
-    browser = None
-    context = None
-
+    pw = browser = context = None
     try:
-        # Start a Playwright session in asynchronous mode
-        pw = await async_api.async_playwright().start()
-
-        # Launch a Chromium browser in headless mode with custom arguments
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=[
-                "--window-size=1280,720",         # Set the browser window size
-                "--disable-dev-shm-usage",        # Avoid using /dev/shm which can cause issues in containers
-                "--ipc=host",                     # Use host-level IPC for better stability
-                "--single-process"                # Run the browser in a single process mode
-            ],
-        )
-
-        # Create a new browser context (like an incognito window)
-        context = await browser.new_context()
-        context.set_default_timeout(5000)
-
-        # Open a new page in the browser context
+        pw, browser, context = await launch()
         page = await context.new_page()
+        await login(page, "admin@clinic.com", "admin123")
+        await expect(page.get_by_role("heading", name="Admin Dashboard")).to_be_visible()
 
-        # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:5173
-        await page.goto("http://localhost:5173")
-        
-        # -> Navigate to /login and wait for the login form to appear so we can fill credentials (admin@clinic.com / admin123).
-        await page.goto("http://localhost:5173/login")
-        
-        # -> Reload the app (navigate to http://localhost:5173/) and wait for the login form to appear so we can fill credentials (admin@clinic.com / admin123).
-        await page.goto("http://localhost:5173/")
-        
-        # --> Assertions to verify final state
-        frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Sign in to your account')]").nth(0).is_visible(), "The user should be redirected to the login screen after logging out."
-        await asyncio.sleep(5)
+        await page.get_by_role("button", name="Logout").click()
+        await expect(page.get_by_text("Modern Beauty Clinic Management", exact=False)).to_be_visible()
 
+        await page.goto(f"{BASE}/login")
+        await expect(page.get_by_text("Login to Your Account", exact=False)).to_be_visible()
     finally:
         if context:
             await context.close()
@@ -52,5 +30,5 @@ async def run_test():
         if pw:
             await pw.stop()
 
+
 asyncio.run(run_test())
-    

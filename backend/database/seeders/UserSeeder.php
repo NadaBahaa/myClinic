@@ -71,6 +71,24 @@ class UserSeeder extends Seeder
                 'perm_show_users'      => false,
                 'perm_show_settings'   => false,
             ],
+            [
+                'uuid'                     => 'user-0000-0000-0000-000000000099',
+                'name'                     => 'Super Admin',
+                'email'                    => 'superadmin@clinic.com',
+                'password'                 => Hash::make('superadmin123'),
+                'role'                     => 'superadmin',
+                'practitioner_type_id'     => null,
+                'perm_show_calendar'       => true,
+                'perm_show_patients'       => true,
+                'perm_show_doctors'        => true,
+                'perm_show_services'       => true,
+                'perm_show_users'          => true,
+                'perm_show_settings'       => true,
+                'perm_show_activity_log'   => true,
+                'perm_show_reports'        => true,
+                'perm_show_materials_tools'=> true,
+                'perm_show_practitioner_types' => true,
+            ],
         ];
 
         foreach ($users as $user) {

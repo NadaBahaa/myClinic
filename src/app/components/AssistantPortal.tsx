@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, FolderOpen, Tag } from 'lucide-react';
+import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, FolderOpen, Tag, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../App';
 import CalendarView, { Appointment, toCalendarAppointment } from './CalendarView';
@@ -9,10 +9,11 @@ import ServicesView from './ServicesView';
 import NotificationPanel from './NotificationPanel';
 import PatientsOfDayView from './PatientsOfDayView';
 import CouponsView from './CouponsView';
+import MaterialsToolsView from './MaterialsToolsView';
 import { appointmentService } from '../../lib/services/appointmentService';
 import { formatLocalDateYYYYMMDD } from '../../lib/date';
 
-type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'patients-day';
+type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'patients-day' | 'materials-tools';
 
 export default function AssistantPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
@@ -49,6 +50,12 @@ export default function AssistantPortal() {
     { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, show: mv.doctors !== false && user.permissions.showDoctors },
     { id: 'services' as Tab, label: 'Services', icon: Sparkles, show: mv.services !== false && user.permissions.showServices },
     { id: 'coupons' as Tab, label: 'Coupons', icon: Tag, show: mv.services !== false && user.permissions.showServices },
+    {
+      id: 'materials-tools' as Tab,
+      label: 'Materials & Tools',
+      icon: Package,
+      show: mv.materials_tools !== false && user.permissions.showMaterialsTools,
+    },
   ];
 
   return (
@@ -124,6 +131,9 @@ export default function AssistantPortal() {
         {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
         {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
         {activeTab === 'coupons' && mv.services !== false && user.permissions.showServices && <CouponsView />}
+        {activeTab === 'materials-tools' && mv.materials_tools !== false && user.permissions.showMaterialsTools && (
+          <MaterialsToolsView />
+        )}
 
         {/* Notification Panel */}
         {showNotifications && (

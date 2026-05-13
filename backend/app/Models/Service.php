@@ -34,4 +34,11 @@ class Service extends Model
     {
         return $this->belongsToMany(Appointment::class, 'appointment_service')->withPivot('service_name');
     }
+
+    public function materials()
+    {
+        return $this->belongsToMany(MaterialOrTool::class, 'service_material', 'service_id', 'material_id')
+            ->withPivot('default_quantity')
+            ->withTimestamps();
+    }
 }

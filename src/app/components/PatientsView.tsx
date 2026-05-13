@@ -3,6 +3,7 @@ import { Plus, Search, Phone, Mail, Calendar, FolderOpen, X, Loader2 } from 'luc
 import { toast } from 'sonner';
 import PatientDetailModal, { Patient } from './PatientDetailModal';
 import PatientFileView from './PatientFileView';
+import { appointmentService } from '../../lib/services/appointmentService';
 import { doctorService } from '../../lib/services/doctorService';
 import { patientService } from '../../lib/services/patientService';
 
@@ -22,6 +23,9 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
   const [showDoctorPicker, setShowDoctorPicker] = useState(false);
   const [patientForFile, setPatientForFile] = useState<Patient | null>(null);
+  /** Doctors who have at least one appointment with `patientForFile` (for admin/assistant picker). */
+  const [eligibleDoctorsForFile, setEligibleDoctorsForFile] = useState<{ id: string; name: string }[]>([]);
+  const [doctorPickerLoading, setDoctorPickerLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +54,44 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
       doctorService.getAll().then((list) => setDoctors(list.map((d) => ({ id: d.id, name: d.name })))).catch(() => {});
     }
   }, [isDoctorView]);
+
+  useEffect(() => {
+    if (!showDoctorPicker || !patientForFile || isDoctorView) {
+      setEligibleDoctorsForFile([]);
+      setDoctorPickerLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setDoctorPickerLoading(true);
+    appointmentService
+      .search({ patient: patientForFile.id })
+      .then((appts) => {
+        if (cancelled) return;
+        const doctorIdsWithAppointment = new Set(appts.map((a) => a.doctorId));
+        const filtered = doctors.filter((d) => doctorIdsWithAppointment.has(d.id));
+        const doctorById = new Map(doctors.map((d) => [d.id, d]));
+        const extras: { id: string; name: string }[] = [];
+        for (const id of doctorIdsWithAppointment) {
+          if (!doctorById.has(id)) {
+            const apt = appts.find((a) => a.doctorId === id);
+            if (apt) extras.push({ id, name: apt.doctorName });
+          }
+        }
+        setEligibleDoctorsForFile([...filtered, ...extras]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error('Could not load appointments for this patient');
+          setEligibleDoctorsForFile([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDoctorPickerLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showDoctorPicker, patientForFile, doctors, isDoctorView]);
 
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -219,14 +261,25 @@ export default function PatientsView({ isDoctorView = false, doctorId = '', doct
               <h3 className="text-lg text-gray-900">Select doctor for {patientForFile.name}&apos;s file</h3>
               <button onClick={() => { setShowDoctorPicker(false); setPatientForFile(null); }} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
             </div>
-            <div className="space-y-2">
-              {doctors.map((d) => (
-                <button key={d.id} onClick={() => handlePickDoctorForFile(d.id, d.name)} className="w-full px-4 py-3 border border-gray-200 rounded-lg hover:bg-pink-50 text-left">
-                  {d.name}
-                </button>
-              ))}
-            </div>
-            {doctors.length === 0 && <p className="text-gray-500 text-sm">No doctors found.</p>}
+            {doctorPickerLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-gray-600">
+                <Loader2 className="w-8 h-8 animate-spin text-pink-600" />
+                <span>Loading doctors…</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {eligibleDoctorsForFile.map((d) => (
+                  <button key={d.id} type="button" onClick={() => handlePickDoctorForFile(d.id, d.name)} className="w-full px-4 py-3 border border-gray-200 rounded-lg hover:bg-pink-50 text-left">
+                    {d.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!doctorPickerLoading && eligibleDoctorsForFile.length === 0 && (
+              <p className="text-gray-500 text-sm mt-2">
+                No doctors have appointments with this patient yet. Book an appointment first to open their file for a doctor.
+              </p>
+            )}
           </div>
         </div>
       )}

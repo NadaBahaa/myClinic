@@ -85,7 +85,7 @@ export default function Login({ onBack, onForgotPassword }: LoginProps) {
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg" data-testid="login-error">
                 <AlertCircle className="w-5 h-5" />
                 <span>{error}</span>
               </div>

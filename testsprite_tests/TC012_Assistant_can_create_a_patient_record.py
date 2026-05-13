@@ -1,46 +1,36 @@
 import asyncio
-from playwright import async_api
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from playwright.async_api import expect
 
+from support import launch, login
+
+
 async def run_test():
-    pw = None
-    browser = None
-    context = None
-
+    pw = browser = context = None
     try:
-        # Start a Playwright session in asynchronous mode
-        pw = await async_api.async_playwright().start()
-
-        # Launch a Chromium browser in headless mode with custom arguments
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=[
-                "--window-size=1280,720",         # Set the browser window size
-                "--disable-dev-shm-usage",        # Avoid using /dev/shm which can cause issues in containers
-                "--ipc=host",                     # Use host-level IPC for better stability
-                "--single-process"                # Run the browser in a single process mode
-            ],
-        )
-
-        # Create a new browser context (like an incognito window)
-        context = await browser.new_context()
-        context.set_default_timeout(5000)
-
-        # Open a new page in the browser context
+        pw, browser, context = await launch()
         page = await context.new_page()
+        await login(page, "assistant@clinic.com", "assistant123")
 
-        # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:5173
-        await page.goto("http://localhost:5173")
-        
-        # -> Navigate to http://localhost:5173/login and wait for the login page or any interactive elements to appear.
-        await page.goto("http://localhost:5173/login")
-        
-        # --> Assertions to verify final state
-        frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Test Patient')]").nth(0).is_visible(), "The patient list should show the newly created patient's name after creating a patient"
-        await asyncio.sleep(5)
+        await page.get_by_role("button", name="All Patients").click()
+        await page.get_by_role("button", name="Add Patient").click()
 
+        label = f"Test Patient {int(time.time())}"
+        email = f"e2e.{int(time.time())}@patient.test"
+
+        shell = page.locator("div.fixed.inset-0").filter(has_text="Add New Patient")
+        await shell.get_by_label("Full Name *").fill(label)
+        await shell.get_by_label("Date of Birth *").fill("1992-06-15")
+        await shell.get_by_label("Email *").fill(email)
+        await shell.get_by_label("Phone *").fill("5559876543")
+        await shell.get_by_role("button", name="Add Patient").click()
+
+        await expect(page.get_by_text(label)).to_be_visible()
     finally:
         if context:
             await context.close()
@@ -49,5 +39,5 @@ async def run_test():
         if pw:
             await pw.stop()
 
+
 asyncio.run(run_test())
-    

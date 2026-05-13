@@ -19,6 +19,15 @@ class ServiceResource extends JsonResource
             'allowedPractitionerTypeIds' => $this->whenLoaded('practitionerTypes',
                 fn() => $this->practitionerTypes->pluck('uuid')->values()
             ),
+            'defaultMaterials' => $this->whenLoaded('materials', function () {
+                return $this->materials->map(fn ($m) => [
+                    'materialId'      => $m->uuid,
+                    'name'            => $m->name,
+                    'unitPrice'       => (float) $m->unit_price,
+                    'unit'            => $m->unit,
+                    'defaultQuantity' => (float) $m->pivot->default_quantity,
+                ])->values();
+            }),
         ];
     }
 }

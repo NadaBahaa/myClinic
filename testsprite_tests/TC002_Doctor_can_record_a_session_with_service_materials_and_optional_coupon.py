@@ -1,85 +1,44 @@
 import asyncio
-from playwright import async_api
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from playwright.async_api import expect
 
+from support import close_patient_file_if_open, doctor_open_emma_add_session, launch, login
+
+
 async def run_test():
-    pw = None
-    browser = None
-    context = None
-
+    pw = browser = context = None
     try:
-        # Start a Playwright session in asynchronous mode
-        pw = await async_api.async_playwright().start()
-
-        # Launch a Chromium browser in headless mode with custom arguments
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=[
-                "--window-size=1280,720",         # Set the browser window size
-                "--disable-dev-shm-usage",        # Avoid using /dev/shm which can cause issues in containers
-                "--ipc=host",                     # Use host-level IPC for better stability
-                "--single-process"                # Run the browser in a single process mode
-            ],
-        )
-
-        # Create a new browser context (like an incognito window)
-        context = await browser.new_context()
-        context.set_default_timeout(5000)
-
-        # Open a new page in the browser context
+        pw, browser, context = await launch()
         page = await context.new_page()
+        await login(page, "sarah@clinic.com", "doctor123")
+        assert "/doctor" in page.url or "/appointments" in page.url
 
-        # Interact with the page elements to simulate user flow
- 
-        # -> Navigate to http://localhost:5173
-        await page.goto("http://localhost:5173")
-        # -> Click the Login button to open the login form (start doctor login).
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div/div/div/header/div/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        # -> Fill the doctor email and password into the login form and click Login to sign in as the doctor.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('sarah@clinic.com')
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('doctor123')
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        # -> Click the Login button on the homepage to open the login form so the doctor can sign in (use element index 315).
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div/div/div/header/div/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        # -> Fill the doctor email and password into the login form and submit (this is login attempt #2).
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('sarah@clinic.com')
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('doctor123')
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div/div/div/div/div/form/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        # --> Assertions to verify final state
-        frame = context.pages[-1]
-        current_url = await frame.evaluate("() => window.location.href")
-        assert '/appointments' in current_url
-        assert await frame.locator("xpath=//*[contains(., 'Appointments')]").nth(0).is_visible(), "Expected 'Appointments' to be visible"
-        assert await frame.locator("xpath=//*[contains(., 'Completed')]").nth(0).is_visible(), "Expected 'Completed' to be visible"
-        assert await frame.locator("xpath=//*[contains(., 'Session saved')]").nth(0).is_visible(), "Expected 'Session saved' to be visible"
-        assert await frame.locator("xpath=//*[contains(., 'Coupon preview')]").nth(0).is_visible(), "Expected 'Coupon preview' to be visible"
-        assert await frame.locator("xpath=//*[contains(., 'net profit')]").nth(0).is_visible(), "Expected 'net profit' to be visible"
-        await asyncio.sleep(5)
+        await doctor_open_emma_add_session(page)
+        modal = page.locator("div.fixed.inset-0").filter(has_text="Add Session for")
+        await modal.get_by_placeholder("Enter service name").fill("E2E Facial Service")
+        await modal.locator('input[type="number"]').first.fill("200")
+        await modal.locator("input.font-mono.uppercase").fill("TEST10")
+        await modal.get_by_role("button", name="Apply").click()
+        await expect(modal.get_by_text("Net Profit", exact=False)).to_be_visible()
 
+        mat_select = modal.locator("select").first
+        await expect(mat_select.locator("option").nth(1)).to_be_attached(timeout=30000)
+        opts = await mat_select.locator("option").count()
+        if opts > 1:
+            await mat_select.select_option(index=1)
+            await modal.locator("button.bg-blue-600").click()
+
+        await modal.locator("form").get_by_role("button", name=re.compile(r"^Add Session$")).click()
+
+        await expect(page.get_by_text("Session added successfully")).to_be_visible()
+        await close_patient_file_if_open(page)
+        await page.get_by_role("button", name="My Schedule").click()
+        await expect(page.get_by_text("Today's Appointments", exact=False)).to_be_visible()
     finally:
         if context:
             await context.close()
@@ -88,5 +47,5 @@ async def run_test():
         if pw:
             await pw.stop()
 
+
 asyncio.run(run_test())
-    

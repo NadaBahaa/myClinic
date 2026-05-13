@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             MaterialOrToolSeeder::class,
             AppointmentSeeder::class,
+            CouponSeeder::class,
         ]);
     }
 }
