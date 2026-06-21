@@ -1,3 +1,16 @@
+<IfModule mod_mime.c>
+    # Required for Vite ES modules — without this AWS/Apache serves .js as application/octet-stream
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType application/wasm .wasm
+    AddType image/svg+xml .svg
+    AddType application/json .json .map
+</IfModule>
+
+<IfModule mod_dir.c>
+    DirectoryIndex index.html index.php
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -14,8 +27,22 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
+    # Existing files & directories (SPA assets, storage, etc.)
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Laravel API
+    RewriteRule ^api(/.*)?$ index.php [L]
+
+    # Swagger docs
+    RewriteRule ^docs(/.*)?$ index.php [L]
+
+    # React SPA client-side routes (/admin, /doctor, …)
+    RewriteCond %{REQUEST_URI} !^/storage/
+    RewriteCond %{DOCUMENT_ROOT}/index.html -f
+    RewriteRule ^ index.html [L]
+
+    # Fallback Laravel front controller
     RewriteRule ^ index.php [L]
 </IfModule>

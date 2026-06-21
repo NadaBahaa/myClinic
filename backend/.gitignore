@@ -18,3 +18,8 @@ yarn-error.log
 /.idea
 /.vscode
 /testsprite_tests/*
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*

@@ -1,23 +1,36 @@
 <?php
 
+use App\Http\Controllers\ApiDocsController;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
 */
-
-use App\Http\Controllers\ApiDocsController;
-
-Route::get('/', function () {
-    return view('welcome');
-});
 
 Route::get('/docs', [ApiDocsController::class, 'swagger'])->name('api.docs');
 Route::get('/docs/openapi.yaml', [ApiDocsController::class, 'spec'])->name('api.docs.spec');
+
+Route::get('/', function () {
+    $spa = public_path('index.html');
+    if (File::exists($spa)) {
+        return response()->file($spa, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    return view('welcome');
+});
+
+Route::fallback(function () {
+    if (request()->is('api/*', 'storage/*', 'assets/*', 'docs', 'docs/*')) {
+        abort(404);
+    }
+
+    $spa = public_path('index.html');
+    if (File::exists($spa)) {
+        return response()->file($spa, ['Content-Type' => 'text/html; charset=UTF-8']);
+    }
+
+    abort(404);
+});
