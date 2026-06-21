@@ -37,6 +37,76 @@ Point Apache/nginx to `backend/public`. See `deploy/aws/nginx.conf` for nginx.
 
 ---
 
+## Database (fix `Connection refused`)
+
+That error means Laravel cannot reach MySQL. Your log shows database **`laravel`** — that is the default from `.env.example`; production must use real credentials.
+
+### 1. Create `backend/.env` on the server
+
+```bash
+cd backend
+cp .env.aws.example .env
+php artisan key:generate
+nano .env   # set DB_* and APP_URL
+```
+
+### 2. Option A — MySQL on the same EC2 box
+
+```bash
+sudo apt update && sudo apt install -y mysql-server
+sudo systemctl enable mysql && sudo systemctl start mysql
+
+sudo mysql <<'SQL'
+CREATE DATABASE beauty_clinic CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'clinic'@'localhost' IDENTIFIED BY 'YOUR_STRONG_PASSWORD';
+GRANT ALL PRIVILEGES ON beauty_clinic.* TO 'clinic'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+```
+
+In `.env`:
+
+```env
+DB_HOST=127.0.0.1
+DB_DATABASE=beauty_clinic
+DB_USERNAME=clinic
+DB_PASSWORD=YOUR_STRONG_PASSWORD
+```
+
+### 3. Option B — Amazon RDS (recommended)
+
+1. Create RDS MySQL instance (database name: `beauty_clinic`).
+2. Security group: allow **inbound TCP 3306** from your **EC2 security group** (not `0.0.0.0/0`).
+3. In `.env`:
+
+```env
+DB_HOST=your-db.xxxxxxxxx.us-east-1.rds.amazonaws.com
+DB_DATABASE=beauty_clinic
+DB_USERNAME=admin
+DB_PASSWORD=your-rds-password
+```
+
+### 4. Test before migrate
+
+```bash
+cd backend
+chmod +x scripts/check-database.sh
+./scripts/check-database.sh
+```
+
+### 5. Deploy commands (order matters)
+
+```bash
+php artisan config:clear          # clear old cached config first
+php artisan migrate --force       # only after DB test passes
+php artisan config:cache
+php artisan route:cache
+```
+
+If you already ran `config:cache` with wrong DB settings, run **`config:clear`** after fixing `.env`, then cache again.
+
+---
+
 ## Split deploy: S3 + CloudFront (frontend) + ALB (API)
 
 ### Frontend
