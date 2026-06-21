@@ -369,3 +369,4 @@
 
 /testsprite_tests/*
 # testsprite_tests/__pycache__/*
+node_modules

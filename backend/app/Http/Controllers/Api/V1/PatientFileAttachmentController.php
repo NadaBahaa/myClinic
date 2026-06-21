@@ -14,9 +14,8 @@ class PatientFileAttachmentController extends Controller
     public function index(Request $request, string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor?->id !== $file->doctor_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('view', $file);
+
         $attachments = $file->attachments()->with('sessionRecord')->latest()->get();
         return response()->json([
             'data' => $attachments->map(fn ($a) => [
@@ -33,9 +32,8 @@ class PatientFileAttachmentController extends Controller
     public function store(Request $request, string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor?->id !== $file->doctor_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('view', $file);
+
         $request->validate([
             'file'       => 'required|file|max:20480',
             'name'       => 'nullable|string|max:255',
@@ -67,9 +65,8 @@ class PatientFileAttachmentController extends Controller
     public function destroy(Request $request, string $fileUuid, string $attachmentUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor?->id !== $file->doctor_id) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('view', $file);
+
         $attachment = PatientFileAttachment::where('uuid', $attachmentUuid)->where('patient_file_id', $file->id)->firstOrFail();
         if (Storage::disk('public')->exists($attachment->path)) {
             Storage::disk('public')->delete($attachment->path);

@@ -11,34 +11,44 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'uuid'              => (string) Str::uuid(),
+            'name'              => fake()->name(),
+            'email'             => fake()->unique()->safeEmail(),
+            'password'          => static::$password ??= Hash::make('password'),
+            'role'              => 'assistant',
+            'is_active'         => true,
+            'perm_show_calendar' => true,
+            'perm_show_patients' => true,
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(fn () => ['role' => 'admin']);
+    }
+
+    public function doctor(): static
+    {
+        return $this->state(fn () => ['role' => 'doctor']);
+    }
+
+    public function assistant(): static
+    {
+        return $this->state(fn () => ['role' => 'assistant']);
+    }
+
+    public function accountant(): static
+    {
+        return $this->state(fn () => ['role' => 'accountant', 'perm_show_reports' => true]);
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn () => ['is_active' => false]);
     }
 }

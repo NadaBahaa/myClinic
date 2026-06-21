@@ -16,7 +16,9 @@ class PatientPhotoController extends Controller
 {
     public function index(string $fileUuid): JsonResponse
     {
-        $file   = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
+
         $photos = $file->photos()->with('session')->latest()->get();
 
         return response()->json(PatientPhotoResource::collection($photos));
@@ -25,6 +27,7 @@ class PatientPhotoController extends Controller
     public function store(Request $request, string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
 
         $request->validate([
             'photo'      => 'required|file|mimetypes:image/jpeg,image/png,image/jpg,image/gif,image/webp,image/heic,image/heif|max:10240',
@@ -58,7 +61,9 @@ class PatientPhotoController extends Controller
 
     public function destroy(string $fileUuid, string $photoUuid): JsonResponse
     {
-        $file  = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
+
         $photo = PatientPhoto::where('uuid', $photoUuid)
             ->where('patient_file_id', $file->id)
             ->firstOrFail();

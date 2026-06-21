@@ -132,8 +132,12 @@ class ReportsController extends Controller
             ]);
 
         // Monthly trend (last 12 months or filtered range)
+        $monthExpr = DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', date)"
+            : "DATE_FORMAT(date, '%Y-%m')";
+
         $monthlyTrend = SessionRecord::select(
-                DB::raw("DATE_FORMAT(date, '%Y-%m') as month"),
+                DB::raw("{$monthExpr} as month"),
                 DB::raw('COUNT(*) as sessions'),
                 DB::raw('SUM(service_price) as revenue'),
                 DB::raw('SUM(discount_amount) as discounts'),

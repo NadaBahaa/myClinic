@@ -14,7 +14,8 @@ return new class extends Migration
             $table->string('name', 150);
             $table->string('email', 191)->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'doctor', 'assistant'])->default('assistant');
+            $table->enum('role', ['superadmin', 'admin', 'doctor', 'assistant', 'accountant'])->default('assistant');
+            $table->boolean('is_active')->default(true);
             $table->foreignId('practitioner_type_id')->nullable()->constrained('practitioner_types')->nullOnDelete();
 
             // UI permissions

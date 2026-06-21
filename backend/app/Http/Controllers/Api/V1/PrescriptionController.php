@@ -15,6 +15,7 @@ class PrescriptionController extends Controller
     public function index(string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
 
         return response()->json(PrescriptionResource::collection($file->prescriptions()->latest()->get()));
     }
@@ -22,6 +23,7 @@ class PrescriptionController extends Controller
     public function store(StorePrescriptionRequest $request, string $fileUuid): JsonResponse
     {
         $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
 
         $prescription = $file->prescriptions()->create([
             'name'          => $request->name,
@@ -37,7 +39,9 @@ class PrescriptionController extends Controller
 
     public function show(string $fileUuid, string $uuid): JsonResponse
     {
-        $file         = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
+
         $prescription = Prescription::where('uuid', $uuid)
             ->where('patient_file_id', $file->id)
             ->firstOrFail();
@@ -47,16 +51,22 @@ class PrescriptionController extends Controller
 
     public function update(Request $request, string $fileUuid, string $uuid): JsonResponse
     {
-        $file         = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
+
         $prescription = Prescription::where('uuid', $uuid)
             ->where('patient_file_id', $file->id)
             ->firstOrFail();
 
         $data = [];
         foreach (['name', 'dosage', 'frequency', 'duration', 'notes'] as $field) {
-            if ($request->has($field)) $data[$field] = $request->$field;
+            if ($request->has($field)) {
+                $data[$field] = $request->$field;
+            }
         }
-        if ($request->has('prescribedBy')) $data['prescribed_by'] = $request->prescribedBy;
+        if ($request->has('prescribedBy')) {
+            $data['prescribed_by'] = $request->prescribedBy;
+        }
 
         $prescription->update($data);
 
@@ -65,7 +75,9 @@ class PrescriptionController extends Controller
 
     public function destroy(string $fileUuid, string $uuid): JsonResponse
     {
-        $file         = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $file = PatientFile::where('uuid', $fileUuid)->firstOrFail();
+        $this->authorize('view', $file);
+
         $prescription = Prescription::where('uuid', $uuid)
             ->where('patient_file_id', $file->id)
             ->firstOrFail();

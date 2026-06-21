@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+use App\Http\Controllers\ApiDocsController;
+
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/docs', [ApiDocsController::class, 'swagger'])->name('api.docs');
+Route::get('/docs/openapi.yaml', [ApiDocsController::class, 'spec'])->name('api.docs.spec');

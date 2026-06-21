@@ -2,19 +2,18 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
-    {
-        $response = $this->get('/');
+    use RefreshDatabase;
 
-        // This backend serves API routes under `/api/v1/*`; the web root may not be defined.
-        $response->assertStatus(404);
+    public function test_api_login_route_is_registered(): void
+    {
+        $this->postJson('/api/v1/auth/login', [
+            'email'    => 'missing@test.com',
+            'password' => 'wrong-password',
+        ])->assertUnauthorized();
     }
 }

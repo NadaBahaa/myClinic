@@ -8,19 +8,22 @@ use App\Http\Requests\Patient\UpdatePatientRequest;
 use App\Http\Resources\PatientResource;
 use App\Models\ActivityLog;
 use App\Models\Patient;
+use App\Services\AppointmentAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PatientController extends Controller
 {
+    public function __construct(private readonly AppointmentAuthorizationService $authz)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
-        $query = Patient::query();
+        $this->authorize('viewAny', Patient::class);
 
-        // Doctor: only patients that have a file with this doctor
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor) {
-            $query->whereHas('patientFiles', fn ($q) => $q->where('doctor_id', $request->user()->doctor->id));
-        }
+        $query = Patient::query();
+        $this->authz->scopePatientsQueryForDoctor($query, $request->user());
 
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
@@ -30,13 +33,13 @@ class PatientController extends Controller
             });
         }
 
-        $patients = $query->latest()->get();
-
-        return response()->json(PatientResource::collection($patients));
+        return response()->json(PatientResource::collection($query->latest()->get()));
     }
 
     public function store(StorePatientRequest $request): JsonResponse
     {
+        $this->authorize('create', Patient::class);
+
         $patient = Patient::create([
             'name'              => $request->name,
             'email'             => $request->email,
@@ -54,12 +57,7 @@ class PatientController extends Controller
     public function show(Request $request, string $uuid): JsonResponse
     {
         $patient = Patient::where('uuid', $uuid)->firstOrFail();
-        if ($request->user()?->role === 'doctor' && $request->user()->doctor) {
-            $hasAccess = $patient->patientFiles()->where('doctor_id', $request->user()->doctor->id)->exists();
-            if (! $hasAccess) {
-                return response()->json(['message' => 'Forbidden: you do not have access to this patient'], 403);
-            }
-        }
+        $this->authorize('view', $patient);
 
         return response()->json(new PatientResource($patient));
     }
@@ -67,6 +65,7 @@ class PatientController extends Controller
     public function update(UpdatePatientRequest $request, string $uuid): JsonResponse
     {
         $patient = Patient::where('uuid', $uuid)->firstOrFail();
+        $this->authorize('update', $patient);
 
         $data = [];
         if ($request->has('name'))              $data['name']               = $request->name;
@@ -89,6 +88,8 @@ class PatientController extends Controller
     public function destroy(string $uuid): JsonResponse
     {
         $patient = Patient::where('uuid', $uuid)->firstOrFail();
+        $this->authorize('delete', $patient);
+
         $snapshot = $patient->toArray();
         $patient->delete();
         ActivityLog::log(request()->user()?->id, 'deleted', 'patient', $uuid, $snapshot, null);

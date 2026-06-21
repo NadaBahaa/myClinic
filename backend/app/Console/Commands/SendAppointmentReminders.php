@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Setting;
-use Ghanem\LaravelSmsmisr\Facades\Smsmisr;
+use App\Services\SmsMisrService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -16,10 +16,9 @@ class SendAppointmentReminders extends Command
 
     protected $description = 'Send appointment reminders (email, optional SMS) for appointments 1 to N days ahead.';
 
-    private function smsMisrConfigured(): bool
+    public function __construct(private readonly SmsMisrService $smsMisr)
     {
-        return ! empty(config('smsmisr.sender'))
-            && (! empty(config('smsmisr.token')) || (! empty(config('smsmisr.username')) && ! empty(config('smsmisr.password'))));
+        parent::__construct();
     }
 
     public function handle(): int
@@ -83,17 +82,17 @@ class SendAppointmentReminders extends Command
             if ($this->option('sms') && ! empty($patient->phone)) {
                 $smsStatus = 'sent';
                 try {
-                    if (! $this->smsMisrConfigured()) {
+                    if (! $this->smsMisr->isConfigured()) {
                         $smsStatus = 'failed';
                         Log::warning('SMSMisr is not configured; SMS reminder skipped', ['patient' => $patient->id]);
                     } else {
-                        $response = Smsmisr::send($body, $patient->phone);
-                        if (! $response->isSuccessful()) {
+                        $result = $this->smsMisr->send($body, $patient->phone);
+                        if (! $result['ok']) {
                             $smsStatus = 'failed';
                             Log::warning('SMSMisr returned failure', [
                                 'patient' => $patient->id,
-                                'code'    => $response->code,
-                                'message' => $response->message,
+                                'code'    => $result['code'],
+                                'message' => $result['message'],
                             ]);
                         }
                     }

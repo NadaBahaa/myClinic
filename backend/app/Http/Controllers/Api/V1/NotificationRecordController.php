@@ -9,7 +9,8 @@ use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Patient;
 use App\Models\Setting;
-use Ghanem\LaravelSmsmisr\Facades\Smsmisr;
+use App\Services\AppointmentAuthorizationService;
+use App\Services\SmsMisrService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,15 +21,15 @@ class NotificationRecordController extends Controller
 {
     private const ALLOWED_REMINDER_ROLES = ['admin', 'assistant', 'doctor', 'superadmin'];
 
-    private function smsMisrConfigured(): bool
-    {
-        return ! empty(config('smsmisr.sender'))
-            && (! empty(config('smsmisr.token')) || (! empty(config('smsmisr.username')) && ! empty(config('smsmisr.password'))));
-    }
+    public function __construct(
+        private readonly SmsMisrService $smsMisr,
+        private readonly AppointmentAuthorizationService $authz,
+    ) {}
 
     private function canSendReminders(Request $request): bool
     {
         $role = (string) ($request->user()?->role ?? '');
+
         return in_array($role, self::ALLOWED_REMINDER_ROLES, true);
     }
 
@@ -47,16 +48,21 @@ class NotificationRecordController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', NotificationRecord::class);
+
         $query = NotificationRecord::with(['patient', 'appointment'])->latest('sent_at');
+        $this->authz->scopeNotificationsQuery($query, $request->user());
 
         if ($patientUuid = $request->query('patient')) {
             $patient = Patient::where('uuid', $patientUuid)->first();
-            if ($patient) $query->where('patient_id', $patient->id);
+            if ($patient) {
+                $this->authorize('view', $patient);
+                $query->where('patient_id', $patient->id);
+            }
         }
 
         if ($request->query('active_only')) {
-            // Only show notifications whose appointment is in the future
-            $query->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()));
+            $query->whereHas('appointment', fn ($q) => $q->whereDate('date', '>=', now()->toDateString()));
         }
 
         return response()->json(NotificationRecordResource::collection($query->get()));
@@ -64,8 +70,17 @@ class NotificationRecordController extends Controller
 
     public function store(StoreNotificationRequest $request): JsonResponse
     {
+        $this->authorize('create', NotificationRecord::class);
+
         $patient     = Patient::where('uuid', $request->patientId)->firstOrFail();
         $appointment = Appointment::where('uuid', $request->appointmentId)->firstOrFail();
+
+        $this->authorize('view', $patient);
+        $this->authorize('view', $appointment);
+
+        if ((int) $appointment->patient_id !== (int) $patient->id) {
+            abort(422, 'Appointment does not belong to this patient.');
+        }
 
         $record = NotificationRecord::create([
             'patient_id'     => $patient->id,
@@ -83,14 +98,10 @@ class NotificationRecordController extends Controller
         return response()->json(new NotificationRecordResource($record), 201);
     }
 
-    /**
-     * GET /api/v1/notifications/patient-counts
-     * Per-patient notification counts for future appointments (resets after appointment passes).
-     */
     public function patientCounts(Request $request): JsonResponse
     {
         $query = NotificationRecord::with(['patient', 'appointment'])
-            ->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()))
+            ->whereHas('appointment', fn ($q) => $q->whereDate('date', '>=', now()->toDateString()))
             ->select('patient_id')
             ->selectRaw('COUNT(*) as total_count')
             ->selectRaw('MAX(sent_at) as last_sent_at')
@@ -100,23 +111,22 @@ class NotificationRecordController extends Controller
 
         $data = $results->map(function ($row) {
             $patient = $row->patient;
-            // Get last notification for message/sent_by
             $last = NotificationRecord::with(['appointment'])
                 ->where('patient_id', $row->patient_id)
-                ->whereHas('appointment', fn($q) => $q->whereDate('date', '>=', now()->toDateString()))
+                ->whereHas('appointment', fn ($q) => $q->whereDate('date', '>=', now()->toDateString()))
                 ->latest('sent_at')
                 ->first();
 
             return [
-                'patientId'    => $patient?->uuid,
-                'patientName'  => $patient?->name,
-                'patientEmail' => $patient?->email,
-                'patientPhone' => $patient?->phone,
-                'count'        => (int) $row->total_count,
-                'lastSentAt'   => $row->last_sent_at,
-                'lastMessage'  => $last?->message,
-                'lastSentBy'   => $last?->sent_by,
-                'lastMethod'   => $last?->method,
+                'patientId'       => $patient?->uuid,
+                'patientName'     => $patient?->name,
+                'patientEmail'    => $patient?->email,
+                'patientPhone'    => $patient?->phone,
+                'count'           => (int) $row->total_count,
+                'lastSentAt'      => $row->last_sent_at,
+                'lastMessage'     => $last?->message,
+                'lastSentBy'      => $last?->sent_by,
+                'lastMethod'      => $last?->method,
                 'appointmentDate' => $last?->appointment?->date?->toDateString(),
                 'appointmentTime' => $last?->appointment?->start_time,
             ];
@@ -125,10 +135,6 @@ class NotificationRecordController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * GET /api/v1/notifications/pending
-     * Appointments 1 to N days ahead that haven't received a reminder yet.
-     */
     public function pending(): JsonResponse
     {
         if (! $this->canSendReminders(request())) {
@@ -164,10 +170,6 @@ class NotificationRecordController extends Controller
         ]));
     }
 
-    /**
-     * POST /api/v1/notifications/send-reminders
-     * Send reminder via email + optional SMS. Stores message content in notification record.
-     */
     public function sendReminders(Request $request): JsonResponse
     {
         if (! $this->canSendReminders($request)) {
@@ -245,14 +247,18 @@ class NotificationRecordController extends Controller
                                 ->addPart($body, 'text/plain');
                         });
                     } elseif ($method === 'sms' && ! empty($patient->phone)) {
-                        if (! $this->smsMisrConfigured()) {
+                        if (! $this->smsMisr->isConfigured()) {
                             $status = 'failed';
                             Log::warning('SMSMisr not configured; SMS skipped', ['patient_id' => $patient->id]);
                         } else {
-                            $response = Smsmisr::send($body, $patient->phone);
-                            if (! $response->isSuccessful()) {
+                            $result = $this->smsMisr->send($body, $patient->phone);
+                            if (! $result['ok']) {
                                 $status = 'failed';
-                                Log::warning('SMSMisr failure', ['patient_id' => $patient->id, 'code' => $response->code]);
+                                Log::warning('SMSMisr failure', [
+                                    'patient_id' => $patient->id,
+                                    'code'       => $result['code'],
+                                    'message'    => $result['message'],
+                                ]);
                             }
                         }
                     } elseif ($method === 'whatsapp' && ! empty($patient->phone)) {

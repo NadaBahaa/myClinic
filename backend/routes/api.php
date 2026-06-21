@@ -81,8 +81,9 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('practitioner-types', PractitionerTypeController::class)
             ->only(['index', 'show']);
 
-        // Patients
-        Route::apiResource('patients', PatientController::class);
+        // Patients (search listing rate-limited to prevent bulk scraping)
+        Route::get('patients', [PatientController::class, 'index'])->middleware('throttle:patient-search');
+        Route::apiResource('patients', PatientController::class)->except(['index']);
 
         // Doctors (read; write is admin-only above)
         Route::apiResource('doctors', DoctorController::class)
@@ -122,22 +123,21 @@ Route::prefix('v1')->group(function () {
                 ->parameters(['sessions' => 'sessionUuid']);
 
             // Photos (upload via multipart form)
-            Route::get('photos',             [PatientPhotoController::class, 'index']);
-            Route::post('photos',            [PatientPhotoController::class, 'store']);
-            Route::delete('photos/{photoUuid}', [PatientPhotoController::class, 'destroy']);
-
-            // Attachments (doctor uploads; stored in patient file and DB)
-            Route::get('attachments', [PatientFileAttachmentController::class, 'index']);
+            Route::get('attachments', [PatientFileAttachmentController::class, 'index'])->middleware('throttle:file-download');
             Route::post('attachments', [PatientFileAttachmentController::class, 'store']);
             Route::delete('attachments/{attachmentUuid}', [PatientFileAttachmentController::class, 'destroy']);
+
+            Route::get('photos', [PatientPhotoController::class, 'index'])->middleware('throttle:file-download');
+            Route::post('photos', [PatientPhotoController::class, 'store']);
+            Route::delete('photos/{photoUuid}', [PatientPhotoController::class, 'destroy']);
 
             // Prescriptions
             Route::apiResource('prescriptions', PrescriptionController::class)
                 ->parameters(['prescriptions' => 'uuid']);
         });
 
-        // Reports (admin + accountant)
-        Route::middleware('role:admin,accountant')->group(function () {
+        // Reports (admin + accountant) — rate-limited exports and heavy queries
+        Route::middleware(['role:admin,accountant', 'throttle:reports'])->group(function () {
             Route::get('reports/sessions',          [ReportsController::class, 'sessions']);
             Route::get('reports/sessions/export',   [ReportsController::class, 'exportSessions']);
             Route::get('reports/financial',         [ReportsController::class, 'financial']);
