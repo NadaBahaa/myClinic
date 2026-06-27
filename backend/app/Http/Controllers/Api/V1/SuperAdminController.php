@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\SystemFeatureFlag;
 use App\Models\SystemModule;
 use App\Models\User;
+use App\Services\RolePermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -143,30 +144,15 @@ class SuperAdminController extends Controller
         ]);
     }
 
-    /** Default tab visibility per role (used when no saved setting). */
-    private const DEFAULT_ROLE_TAB_VISIBILITY = [
-        'admin'      => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => true, 'showServices' => true, 'showUsers' => true, 'showSettings' => true, 'showActivityLog' => true, 'showReports' => true, 'showMaterialsTools' => true, 'showPractitionerTypes' => true],
-        'doctor'     => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => false, 'showServices' => true, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
-        'assistant'  => ['showCalendar' => true, 'showPatients' => true, 'showDoctors' => true, 'showServices' => true, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
-        'accountant' => ['showCalendar' => false, 'showPatients' => false, 'showDoctors' => false, 'showServices' => false, 'showUsers' => false, 'showSettings' => false, 'showActivityLog' => false, 'showReports' => false, 'showMaterialsTools' => false, 'showPractitionerTypes' => false],
-    ];
-
-    private const TAB_VISIBILITY_KEYS = ['showCalendar', 'showPatients', 'showDoctors', 'showServices', 'showUsers', 'showSettings', 'showActivityLog', 'showReports', 'showMaterialsTools', 'showPractitionerTypes'];
-
     /**
      * Get default tab visibility per role (superadmin manages these; new users get these by role).
      */
     public function roleTabVisibility(): JsonResponse
     {
-        $raw = Setting::get('role_default_permissions');
-        $data = $raw ? (json_decode($raw, true) ?: []) : [];
         $roles = ['admin', 'doctor', 'assistant', 'accountant'];
         $out = [];
         foreach ($roles as $role) {
-            $out[$role] = array_merge(
-                self::DEFAULT_ROLE_TAB_VISIBILITY[$role] ?? array_fill_keys(self::TAB_VISIBILITY_KEYS, false),
-                $data[$role] ?? []
-            );
+            $out[$role] = RolePermissionService::roleDefaults($role);
         }
         return response()->json(['data' => $out]);
     }
@@ -187,16 +173,17 @@ class SuperAdminController extends Controller
         $out = [];
         foreach (['admin', 'doctor', 'assistant', 'accountant'] as $role) {
             $rolePerms = $perRole[$role] ?? [];
-            $merged = self::DEFAULT_ROLE_TAB_VISIBILITY[$role] ?? [];
-            foreach (self::TAB_VISIBILITY_KEYS as $key) {
+            $merged = RolePermissionService::DEFAULT_ROLE_TAB_VISIBILITY[$role] ?? [];
+            foreach (RolePermissionService::TAB_VISIBILITY_KEYS as $key) {
                 if (array_key_exists($key, $rolePerms)) {
                     $merged[$key] = (bool) $rolePerms[$key];
                 }
             }
             $out[$role] = $merged;
+            RolePermissionService::syncUsersOfRole($role, $merged);
         }
         Setting::set('role_default_permissions', json_encode($out));
-        return response()->json(['message' => 'Role tab visibility updated', 'data' => $out]);
+        return response()->json(['message' => 'Role tab visibility updated and applied to existing users', 'data' => $out]);
     }
 
     /**

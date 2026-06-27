@@ -38,9 +38,11 @@ class AuthController extends Controller
         $user->load(['practitionerType', 'doctor']);
 
         $userData = (new UserResource($user))->toArray($request);
-        $userData['moduleVisibility'] = $user->role === 'superadmin'
+        $moduleVisibility = $user->role === 'superadmin'
             ? array_fill_keys(SystemModule::orderBy('sort_order')->pluck('key')->toArray(), true)
             : SystemModule::visibilityForRole($user->role);
+        $userData['moduleVisibility'] = $moduleVisibility;
+        $userData['permissions'] = self::effectivePermissions($user, $moduleVisibility);
 
         return response()->json([
             'token' => $token,
@@ -61,9 +63,11 @@ class AuthController extends Controller
         $user->load(['practitionerType', 'doctor']);
 
         $userData = (new UserResource($user))->toArray($request);
-        $userData['moduleVisibility'] = $user->role === 'superadmin'
+        $moduleVisibility = $user->role === 'superadmin'
             ? array_fill_keys(SystemModule::orderBy('sort_order')->pluck('key')->toArray(), true)
             : SystemModule::visibilityForRole($user->role);
+        $userData['moduleVisibility'] = $moduleVisibility;
+        $userData['permissions'] = self::effectivePermissions($user, $moduleVisibility);
 
         return response()->json($userData);
     }
@@ -124,5 +128,37 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'Password has been reset.']);
+    }
+
+    /**
+     * Permissions clamped to modules enabled for the user's role.
+     *
+     * @param  array<string, bool>  $moduleVisibility
+     * @return array<string, bool>
+     */
+    private static function effectivePermissions(User $user, array $moduleVisibility): array
+    {
+        $map = [
+            'showCalendar'         => 'calendar',
+            'showPatients'         => 'patients',
+            'showDoctors'          => 'doctors',
+            'showServices'         => 'services',
+            'showUsers'            => 'users',
+            'showSettings'         => 'settings',
+            'showActivityLog'      => 'activity_log',
+            'showReports'          => 'reports',
+            'showMaterialsTools'   => 'materials_tools',
+            'showPractitionerTypes'=> 'practitioner_types',
+        ];
+
+        $perms = $user->permissions;
+        $out = [];
+        foreach ($perms as $key => $enabled) {
+            $moduleKey = $map[$key] ?? null;
+            $moduleOn = ! $moduleKey || ($moduleVisibility[$moduleKey] ?? false);
+            $out[$key] = $moduleOn && (bool) $enabled;
+        }
+
+        return $out;
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\PractitionerType;
 use App\Models\User;
+use App\Services\RolePermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,9 +16,14 @@ class UserController extends Controller
 {
     public function index(): JsonResponse
     {
-        $users = User::with(['practitionerType', 'doctor'])->get();
+        $query = User::with(['practitionerType', 'doctor']);
 
-        return response()->json(UserResource::collection($users));
+        // Clinic admins manage staff only — never expose super-admin accounts.
+        if (request()->user()?->role === 'admin') {
+            $query->where('role', '!=', 'superadmin');
+        }
+
+        return response()->json(UserResource::collection($query->get()));
     }
 
     public function store(StoreUserRequest $request): JsonResponse
@@ -28,25 +34,18 @@ class UserController extends Controller
             $ptId = $pt?->id;
         }
 
-        $perms = $request->permissions ?? [];
+        $perms = RolePermissionService::mergeWithRoleDefaults(
+            $request->role,
+            $request->permissions ?? []
+        );
 
-        $user = User::create([
-            'name'                           => $request->name,
-            'email'                          => $request->email,
-            'password'                       => $request->password,
-            'role'                           => $request->role,
-            'practitioner_type_id'           => $ptId,
-            'perm_show_calendar'             => $perms['showCalendar'] ?? false,
-            'perm_show_patients'             => $perms['showPatients'] ?? false,
-            'perm_show_doctors'              => $perms['showDoctors'] ?? false,
-            'perm_show_services'             => $perms['showServices'] ?? false,
-            'perm_show_users'                => $perms['showUsers'] ?? false,
-            'perm_show_settings'             => $perms['showSettings'] ?? false,
-            'perm_show_activity_log'         => $perms['showActivityLog'] ?? false,
-            'perm_show_reports'              => $perms['showReports'] ?? false,
-            'perm_show_materials_tools'      => $perms['showMaterialsTools'] ?? false,
-            'perm_show_practitioner_types'   => $perms['showPractitionerTypes'] ?? false,
-        ]);
+        $user = User::create(array_merge([
+            'name'                 => $request->name,
+            'email'                => $request->email,
+            'password'             => $request->password,
+            'role'                 => $request->role,
+            'practitioner_type_id' => $ptId,
+        ], RolePermissionService::toDatabaseColumns($perms)));
 
         $user->load('practitionerType');
 
@@ -78,17 +77,7 @@ class UserController extends Controller
         }
 
         if ($request->has('permissions')) {
-            $perms = $request->permissions;
-            $data['perm_show_calendar']           = $perms['showCalendar'] ?? $user->perm_show_calendar;
-            $data['perm_show_patients']           = $perms['showPatients'] ?? $user->perm_show_patients;
-            $data['perm_show_doctors']             = $perms['showDoctors'] ?? $user->perm_show_doctors;
-            $data['perm_show_services']           = $perms['showServices'] ?? $user->perm_show_services;
-            $data['perm_show_users']              = $perms['showUsers'] ?? $user->perm_show_users;
-            $data['perm_show_settings']           = $perms['showSettings'] ?? $user->perm_show_settings;
-            $data['perm_show_activity_log']        = $perms['showActivityLog'] ?? $user->perm_show_activity_log;
-            $data['perm_show_reports']            = $perms['showReports'] ?? $user->perm_show_reports;
-            $data['perm_show_materials_tools']     = $perms['showMaterialsTools'] ?? $user->perm_show_materials_tools;
-            $data['perm_show_practitioner_types']  = $perms['showPractitionerTypes'] ?? $user->perm_show_practitioner_types;
+            $data = array_merge($data, RolePermissionService::toDatabaseColumns($request->permissions));
         }
 
         $user->update($data);
