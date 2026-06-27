@@ -158,3 +158,100 @@ Deploy Laravel to EC2/ECS with `APP_URL=https://api.yourdomain.com`. CORS must a
 1. View page source — script must be `/assets/index-*.js`, **not** `/src/main.tsx`.
 2. Network tab — JS files show `Content-Type: application/javascript`.
 3. API calls go to your real domain, not `localhost`.
+
+---
+
+## Performance (production)
+
+### Queue worker (SMS & notifications)
+
+In `backend/.env`:
+
+```env
+QUEUE_CONNECTION=database
+```
+
+Run migrations, then start a worker (Supervisor recommended on EC2):
+
+```bash
+php artisan migrate --force
+php artisan queue:work --tries=3 --sleep=3
+```
+
+Example Supervisor program:
+
+```ini
+[program:myklinic-queue]
+command=php /var/www/myklinic/backend/artisan queue:work --sleep=3 --tries=3
+autostart=true
+autorestart=true
+user=www-data
+```
+
+### Redis (cache & sessions)
+
+```bash
+sudo apt-get install -y redis-server
+sudo systemctl enable redis-server
+```
+
+In `.env`:
+
+```env
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+```
+
+Then: `php artisan config:cache`
+
+### PHP OPcache
+
+In `/etc/php/8.2/fpm/php.ini` (adjust version):
+
+```ini
+opcache.enable=1
+opcache.memory_consumption=128
+opcache.max_accelerated_files=10000
+```
+
+Reload PHP-FPM: `sudo systemctl reload php8.2-fpm`
+
+---
+
+## Local development with Docker (Laravel Sail)
+
+From `backend/`:
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate --seed
+```
+
+Frontend (host): `npm run dev` with `VITE_API_BASE_URL=http://localhost/api/v1`.
+
+---
+
+## GitHub Actions
+
+- **CI** (`.github/workflows/ci.yml`): PHPUnit + frontend build on every PR/push.
+- **Deploy** (`.github/workflows/deploy.yml`): tests, build, deploy to EC2 on push to `main` (requires secrets `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`).
+
+---
+
+## Assistant checkout (Patients of the Day)
+
+Assistants can click **Pay** once the appointment start time has passed. This creates a session record (sales/revenue) and marks the appointment completed. API: `POST /api/v1/appointments/{uuid}/checkout`.
+
+---
+
+## Materials Excel import/export
+
+`GET /api/v1/materials-tools/export/spreadsheet` — download `.xlsx`  
+`POST /api/v1/materials-tools/import/spreadsheet` — upload `.xlsx` / `.csv` (multipart `file`)
+
+Columns: `name`, `type`, `unit_price`, `unit`, `stock_quantity`, `supplier`, `notes`

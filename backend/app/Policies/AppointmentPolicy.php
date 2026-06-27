@@ -74,6 +74,15 @@ class AppointmentPolicy
         return $this->view($user, $appointment);
     }
 
+    public function checkout(User $user, Appointment $appointment): bool
+    {
+        if (! in_array($user->role, ['admin', 'superadmin', 'assistant', 'doctor'], true)) {
+            return false;
+        }
+
+        return $this->view($user, $appointment);
+    }
+
     public function delete(User $user, Appointment $appointment): bool
     {
         return $this->view($user, $appointment);

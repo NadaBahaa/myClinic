@@ -132,6 +132,7 @@ export default function AssistantPortal() {
             appointments={appointments}
             userRole="assistant"
             currentUserId={user.id}
+            onAppointmentsChange={loadPatientsOfDayAppointments}
           />
         )}
         {activeTab === 'patients' && isTabVisible('patients') && <PatientsView />}

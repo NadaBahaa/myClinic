@@ -24,6 +24,10 @@ export interface Appointment {
   duration: number;
   status: 'scheduled' | 'completed' | 'cancelled';
   notes?: string;
+  servicePrice?: number | null;
+  isPaid?: boolean;
+  isPayable?: boolean;
+  sessionRecordId?: string | null;
 }
 
 function toTimeHHMM(t: string): string {
@@ -45,6 +49,10 @@ export function toCalendarAppointment(api: {
   duration: number;
   status: string;
   notes?: string;
+  servicePrice?: number | null;
+  isPaid?: boolean;
+  isPayable?: boolean;
+  sessionRecordId?: string | null;
 }): Appointment {
   return {
     id: api.id,
@@ -60,6 +68,10 @@ export function toCalendarAppointment(api: {
     duration: api.duration,
     status: api.status as Appointment['status'],
     notes: api.notes,
+    servicePrice: api.servicePrice ?? null,
+    isPaid: api.isPaid ?? false,
+    isPayable: api.isPayable ?? false,
+    sessionRecordId: api.sessionRecordId ?? null,
   };
 }
 

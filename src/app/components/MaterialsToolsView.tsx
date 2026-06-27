@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Package, Wrench, DollarSign, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Wrench, DollarSign, Edit2, Trash2, Loader2, Download, Upload } from 'lucide-react';
 import { MaterialOrTool } from '../types';
 import { toast } from 'sonner';
 import { materialService } from '../../lib/services/materialService';
@@ -245,6 +245,7 @@ export default function MaterialsToolsView() {
   const [filterType, setFilterType] = useState<'all' | 'material' | 'tool'>('all');
   const [selectedItem, setSelectedItem] = useState<MaterialOrTool | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const loadItems = useCallback(() => {
     setLoading(true);
@@ -305,6 +306,40 @@ export default function MaterialsToolsView() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const { blob, filename } = await materialService.exportSpreadsheet();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename ?? 'materials-tools.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Spreadsheet exported');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Export failed');
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await materialService.importSpreadsheet(file);
+      loadItems();
+      toast.success(`Import done: ${result.created} created, ${result.updated} updated`);
+      if (result.errors.length > 0) {
+        toast.error(result.errors.slice(0, 3).join('; '));
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -315,14 +350,29 @@ export default function MaterialsToolsView() {
           </p>
         </div>
         {canMutate && (
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Add Item
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export Excel
+            </button>
+            <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              Import Excel
+              <input type="file" accept=".xlsx,.xls,.csv" className="sr-only" onChange={handleImport} disabled={importing} />
+            </label>
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Add Item
+            </button>
+          </div>
         )}
       </div>
 

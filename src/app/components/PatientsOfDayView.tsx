@@ -1,52 +1,63 @@
 import { useState } from 'react';
-import { Calendar, Clock, User, Mail, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, User, Mail, Send, CheckCircle2, AlertCircle, CreditCard, Loader2 } from 'lucide-react';
 import { NotificationRecord } from '../types';
 import type { Appointment } from './CalendarView';
 import { toast } from 'sonner';
 import { notificationService } from '../../lib/services/notificationService';
+import { appointmentService } from '../../lib/services/appointmentService';
 
 interface PatientsOfDayViewProps {
   appointments: Appointment[];
   userRole: 'doctor' | 'assistant';
   /** For doctors: must be the doctor's UUID (same as appointment.doctorId). For assistants: unused (all doctors' appointments). */
   currentUserId: string;
+  onAppointmentsChange?: () => void;
 }
 
-const initialNotifications: NotificationRecord[] = [
-  {
-    id: 'n1',
-    patientId: 'p1',
-    patientName: 'Emma Wilson',
-    appointmentId: '1',
-    type: 'reminder',
-    sentAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    sentBy: 'System',
-    method: 'email',
-    status: 'sent',
-  },
-];
+const initialNotifications: NotificationRecord[] = [];
 
-export default function PatientsOfDayView({ appointments, userRole, currentUserId }: PatientsOfDayViewProps) {
+function parseStartTime(date: Date, startTime: string): Date {
+  const [h, m] = startTime.split(':').map((p) => parseInt(p, 10));
+  const d = new Date(date);
+  d.setHours(Number.isFinite(h) ? h : 0, Number.isFinite(m) ? m : 0, 0, 0);
+  return d;
+}
+
+function sessionHasStarted(appointment: Appointment): boolean {
+  if (appointment.isPayable !== undefined) return appointment.isPayable;
+  return Date.now() >= parseStartTime(appointment.date, appointment.startTime).getTime();
+}
+
+function appointmentIsPaid(appointment: Appointment): boolean {
+  if (appointment.isPaid !== undefined) return appointment.isPaid;
+  return appointment.status === 'completed';
+}
+
+export default function PatientsOfDayView({
+  appointments,
+  userRole,
+  currentUserId,
+  onAppointmentsChange,
+}: PatientsOfDayViewProps) {
   const [selectedDay, setSelectedDay] = useState<'today' | 'tomorrow'>('today');
   const [notifications, setNotifications] = useState<NotificationRecord[]>(initialNotifications);
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Filter appointments based on selected day and user role
   const getFilteredAppointments = () => {
     const targetDate = selectedDay === 'today' ? today : tomorrow;
-    
+
     return appointments.filter((apt) => {
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
-      
+
       const isCorrectDate = aptDate.getTime() === targetDate.getTime();
-      
-      // Doctor: own appointments only (currentUserId = doctor UUID). Assistant: all doctors.
+
       if (userRole === 'doctor') {
         return isCorrectDate && !!currentUserId && apt.doctorId === currentUserId;
       }
@@ -56,19 +67,16 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
 
   const filteredAppointments = getFilteredAppointments();
 
-  // Get notification count for an appointment
   const getNotificationCount = (appointmentId: string) => {
-    return notifications.filter(n => n.appointmentId === appointmentId).length;
+    return notifications.filter((n) => n.appointmentId === appointmentId).length;
   };
 
-  // Get latest notification for an appointment
   const getLatestNotification = (appointmentId: string) => {
-    const aptNotifications = notifications.filter(n => n.appointmentId === appointmentId);
+    const aptNotifications = notifications.filter((n) => n.appointmentId === appointmentId);
     if (aptNotifications.length === 0) return null;
     return aptNotifications.sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime())[0];
   };
 
-  // Send/Resend notification
   const handleSendNotification = async (appointment: Appointment, method: 'email' | 'sms' | 'whatsapp') => {
     try {
       const result = await notificationService.sendReminders({
@@ -101,13 +109,31 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
     }
   };
 
+  const handlePay = async (appointment: Appointment) => {
+    if (appointmentIsPaid(appointment) || !sessionHasStarted(appointment)) return;
+    setPayingId(appointment.id);
+    try {
+      const result = await appointmentService.checkout(appointment.id);
+      toast.success(
+        `Payment recorded for ${appointment.patientName} — $${result.sessionRecord.servicePrice.toFixed(2)}`,
+      );
+      onAppointmentsChange?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Payment failed');
+    } finally {
+      setPayingId(null);
+    }
+  };
+
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true,
     });
   };
+
+  const paidCount = filteredAppointments.filter((a) => appointmentIsPaid(a)).length;
 
   return (
     <div>
@@ -138,8 +164,7 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-blue-100 rounded-lg">
@@ -151,15 +176,22 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <CreditCard className="w-5 h-5 text-emerald-600" />
+            </div>
+            <span className="text-gray-600">Paid Sessions</span>
+          </div>
+          <p className="text-3xl text-gray-900">{paidCount}</p>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
             </div>
             <span className="text-gray-600">Notifications Sent</span>
           </div>
           <p className="text-3xl text-gray-900">
-            {notifications.filter(n => 
-              filteredAppointments.some(a => a.id === n.appointmentId)
-            ).length}
+            {notifications.filter((n) => filteredAppointments.some((a) => a.id === n.appointmentId)).length}
           </p>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -169,13 +201,10 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
             </div>
             <span className="text-gray-600">Unique Patients</span>
           </div>
-          <p className="text-3xl text-gray-900">
-            {new Set(filteredAppointments.map(a => a.patientId)).size}
-          </p>
+          <p className="text-3xl text-gray-900">{new Set(filteredAppointments.map((a) => a.patientId)).size}</p>
         </div>
       </div>
 
-      {/* Appointments List */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="p-4 border-b border-gray-200">
           <h3 className="text-lg text-gray-900">
@@ -195,29 +224,35 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
               .map((appointment) => {
                 const notificationCount = getNotificationCount(appointment.id);
                 const latestNotification = getLatestNotification(appointment.id);
+                const canPay =
+                  userRole === 'assistant' &&
+                  !appointmentIsPaid(appointment) &&
+                  sessionHasStarted(appointment) &&
+                  appointment.status !== 'cancelled';
+                const isPaying = payingId === appointment.id;
 
                 return (
                   <div key={appointment.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      {/* Appointment Info */}
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
                           <div>
-                            <h4 className="text-lg text-gray-900 mb-1">
-                              {appointment.patientName}
-                            </h4>
+                            <h4 className="text-lg text-gray-900 mb-1">{appointment.patientName}</h4>
                             <p className="text-pink-600">{appointment.serviceName}</p>
+                            {appointment.servicePrice != null && (
+                              <p className="text-sm text-gray-500 mt-1">${appointment.servicePrice.toFixed(2)}</p>
+                            )}
                           </div>
                           <span
                             className={`px-3 py-1 rounded-full text-sm ${
-                              appointment.status === 'scheduled'
-                                ? 'bg-blue-100 text-blue-700'
-                                : appointment.status === 'completed'
-                                  ? 'bg-green-100 text-green-700'
+                              appointmentIsPaid(appointment) || appointment.status === 'completed'
+                                ? 'bg-green-100 text-green-700'
+                                : appointment.status === 'scheduled'
+                                  ? 'bg-blue-100 text-blue-700'
                                   : 'bg-gray-100 text-gray-700'
                             }`}
                           >
-                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                            {appointmentIsPaid(appointment) ? 'Paid' : appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                           </span>
                         </div>
 
@@ -232,8 +267,7 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
                           </div>
                         </div>
 
-                        {/* Notification Status */}
-                        {latestNotification && (
+                        {latestNotification ? (
                           <div className="flex items-center gap-2 text-sm">
                             <CheckCircle2 className="w-4 h-4 text-green-600" />
                             <span className="text-gray-600">
@@ -246,9 +280,7 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
                               )}
                             </span>
                           </div>
-                        )}
-
-                        {!latestNotification && (
+                        ) : (
                           <div className="flex items-center gap-2 text-sm text-amber-600">
                             <AlertCircle className="w-4 h-4" />
                             <span>No notifications sent yet</span>
@@ -256,9 +288,45 @@ export default function PatientsOfDayView({ appointments, userRole, currentUserI
                         )}
                       </div>
 
-                      {/* Notification Actions */}
                       <div className="flex flex-col gap-2 lg:w-48">
-                        <p className="text-xs text-gray-600 mb-1">Send Notification:</p>
+                        {userRole === 'assistant' && (
+                          <>
+                            <p className="text-xs text-gray-600 mb-1">Payment:</p>
+                            {appointmentIsPaid(appointment) ? (
+                              <div className="flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm border border-green-200">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Paid
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handlePay(appointment)}
+                                disabled={!canPay || isPaying}
+                                title={
+                                  !sessionHasStarted(appointment)
+                                    ? 'Available when session start time has passed'
+                                    : 'Record payment and create session'
+                                }
+                                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                  canPay
+                                    ? 'bg-pink-600 text-white hover:bg-pink-700'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                }`}
+                              >
+                                {isPaying ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <CreditCard className="w-4 h-4" />
+                                )}
+                                Pay
+                                {appointment.servicePrice != null && canPay && (
+                                  <span className="opacity-90">${appointment.servicePrice.toFixed(0)}</span>
+                                )}
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        <p className="text-xs text-gray-600 mb-1 mt-2">Send Notification:</p>
                         <button
                           onClick={() => handleSendNotification(appointment, 'email')}
                           className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Notification\StoreNotificationRequest;
 use App\Http\Resources\NotificationRecordResource;
+use App\Jobs\SendAppointmentReminderJob;
 use App\Models\Appointment;
 use App\Models\NotificationRecord;
 use App\Models\Patient;
@@ -194,7 +195,9 @@ class NotificationRecordController extends Controller
         $appointments = $query->get();
         $sent = 0;
         $failed = 0;
+        $queued = 0;
         $senderName = $request->user()?->name ?? 'System';
+        $useQueue = config('queue.default') !== 'sync';
 
         foreach ($appointments as $appointment) {
             $patient = $appointment->patient;
@@ -237,6 +240,19 @@ class NotificationRecordController extends Controller
             }
 
             foreach ($methods as $method) {
+                if ($useQueue) {
+                    SendAppointmentReminderJob::dispatch(
+                        $appointment->id,
+                        $method,
+                        $body,
+                        $htmlBody,
+                        $senderName
+                    );
+                    $queued++;
+
+                    continue;
+                }
+
                 $status = 'sent';
                 try {
                     if ($method === 'email' && ! empty($patient->email)) {
@@ -292,9 +308,10 @@ class NotificationRecordController extends Controller
         }
 
         return response()->json([
-            'message' => 'Reminders processed',
+            'message' => $useQueue ? 'Reminders queued' : 'Reminders processed',
             'sent'    => $sent,
             'failed'  => $failed,
+            'queued'  => $queued,
             'total'   => $appointments->count(),
         ]);
     }

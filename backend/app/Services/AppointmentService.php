@@ -21,7 +21,8 @@ class AppointmentService
 
     public function buildListQuery(Request $request): Builder
     {
-        $query = Appointment::with(['patient', 'doctor', 'services']);
+        $query = Appointment::with(['patient', 'doctor', 'services', 'sessionRecord']);
+
         $this->authz->scopeAppointmentsQuery($query, $request);
 
         if ($date = $request->query('date')) {
@@ -142,7 +143,7 @@ class AppointmentService
 
     public function byDate(string $date, Request $request): Collection
     {
-        $query = Appointment::with(['patient', 'doctor', 'services'])->whereDate('date', $date);
+        $query = Appointment::with(['patient', 'doctor', 'services', 'sessionRecord'])->whereDate('date', $date);
         $this->authz->scopeAppointmentsQuery($query, $request);
 
         return $query->get();

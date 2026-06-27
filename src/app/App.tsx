@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, useEffect, useCallback } from 'react';
+import { useState, createContext, useContext, useEffect, useCallback, lazy, Suspense } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Toaster, toast } from 'sonner';
@@ -6,17 +6,26 @@ import Landing from './components/Landing';
 import Login from './components/Login';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
-import AdminDashboard from './components/AdminDashboard';
-import DoctorPortal from './components/DoctorPortal';
-import AssistantPortal from './components/AssistantPortal';
-import AccountantDashboard from './components/AccountantDashboard';
-import SuperAdminDashboard from './components/SuperAdminDashboard';
 import type { SystemUser, UserPermissions } from './components/UserDetailModal';
 import { PractitionerTypeProvider } from './contexts/PractitionerTypeContext';
 import { authService } from '../lib/services/authService';
 import { useAuthStore } from '../lib/stores/authStore';
 import { dispatchAuthSessionChanged, getToken } from '../lib/api';
 import { resolveIdleLogoutMs, useIdleLogout } from '../lib/useIdleLogout';
+
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const DoctorPortal = lazy(() => import('./components/DoctorPortal'));
+const AssistantPortal = lazy(() => import('./components/AssistantPortal'));
+const AccountantDashboard = lazy(() => import('./components/AccountantDashboard'));
+const SuperAdminDashboard = lazy(() => import('./components/SuperAdminDashboard'));
+
+function DashboardFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-gray-500">Loading…</div>
+    </div>
+  );
+}
 
 // Types
 export type UserRole = 'superadmin' | 'admin' | 'doctor' | 'assistant' | 'accountant' | null;
@@ -301,19 +310,39 @@ function App() {
       );
     }
     if (currentPage === 'admin' && user?.role === 'admin') {
-      return <AdminDashboard />;
+      return (
+        <Suspense fallback={<DashboardFallback />}>
+          <AdminDashboard />
+        </Suspense>
+      );
     }
     if (currentPage === 'doctor' && user?.role === 'doctor') {
-      return <DoctorPortal />;
+      return (
+        <Suspense fallback={<DashboardFallback />}>
+          <DoctorPortal />
+        </Suspense>
+      );
     }
     if (currentPage === 'assistant' && user?.role === 'assistant') {
-      return <AssistantPortal />;
+      return (
+        <Suspense fallback={<DashboardFallback />}>
+          <AssistantPortal />
+        </Suspense>
+      );
     }
     if (currentPage === 'accountant' && user?.role === 'accountant') {
-      return <AccountantDashboard />;
+      return (
+        <Suspense fallback={<DashboardFallback />}>
+          <AccountantDashboard />
+        </Suspense>
+      );
     }
     if (currentPage === 'superadmin' && user?.role === 'superadmin') {
-      return <SuperAdminDashboard />;
+      return (
+        <Suspense fallback={<DashboardFallback />}>
+          <SuperAdminDashboard />
+        </Suspense>
+      );
     }
     return <Landing onLoginClick={openLandingLogin} />;
   };

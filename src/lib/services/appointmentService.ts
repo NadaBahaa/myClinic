@@ -15,6 +15,10 @@ export interface Appointment {
   duration: number;
   status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
   notes?: string;
+  servicePrice?: number | null;
+  isPaid?: boolean;
+  isPayable?: boolean;
+  sessionRecordId?: string | null;
 }
 
 const cache = new Map<string, { data: Appointment[]; ts: number }>();
@@ -144,5 +148,14 @@ export const appointmentService = {
   async remove(uuid: string): Promise<void> {
     await apiFetch(`/appointments/${uuid}`, { method: 'DELETE' });
     invalidateCache();
+  },
+
+  async checkout(uuid: string): Promise<{ appointment: Appointment; sessionRecord: { id: string; servicePrice: number } }> {
+    const result = await apiFetch<{ appointment: Appointment; sessionRecord: { id: string; servicePrice: number } }>(
+      `/appointments/${uuid}/checkout`,
+      { method: 'POST' }
+    );
+    invalidateCache();
+    return result;
   },
 };

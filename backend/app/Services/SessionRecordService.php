@@ -78,6 +78,38 @@ class SessionRecordService
     }
 
     /**
+     * Quick checkout from Patients of the Day (no materials/coupon).
+     */
+    public function createFromCheckout(
+        PatientFile $file,
+        Appointment $appointment,
+        Service $service,
+        string $performedBy
+    ): SessionRecord {
+        $price = (float) $service->price;
+
+        $session = SessionRecord::create([
+            'patient_file_id'        => $file->id,
+            'appointment_id'         => $appointment->id,
+            'date'                   => $appointment->date->toDateString(),
+            'service_id'             => $service->id,
+            'coupon_id'              => null,
+            'service_name'           => $service->name,
+            'service_price'          => $price,
+            'discount_amount'        => 0,
+            'original_service_price' => null,
+            'total_materials_cost'   => 0,
+            'net_profit'             => $price,
+            'performed_by'           => $performedBy,
+            'notes'                  => 'Paid via assistant checkout',
+        ]);
+
+        $session->load(['materialUsages.material', 'appointment', 'service', 'coupon']);
+
+        return $session;
+    }
+
+    /**
      * @return array{0: float, 1: float, 2: ?float, 3: ?int}
      */
     private function resolveCouponPricing(StoreSessionRecordRequest $request): array

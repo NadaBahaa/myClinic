@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Models\Appointment;
+use App\Models\MaterialOrTool;
 use App\Models\NotificationRecord;
 use App\Models\Patient;
 use App\Models\PatientFile;
 use App\Models\SessionRecord;
 use App\Policies\AppointmentPolicy;
+use App\Policies\MaterialOrToolPolicy;
 use App\Policies\NotificationRecordPolicy;
 use App\Policies\PatientFilePolicy;
 use App\Policies\PatientPolicy;
@@ -21,6 +23,7 @@ class AuthServiceProvider extends ServiceProvider
         PatientFile::class   => PatientFilePolicy::class,
         SessionRecord::class => SessionRecordPolicy::class,
         Appointment::class   => AppointmentPolicy::class,
+        MaterialOrTool::class => MaterialOrToolPolicy::class,
         NotificationRecord::class => NotificationRecordPolicy::class,
     ];
 

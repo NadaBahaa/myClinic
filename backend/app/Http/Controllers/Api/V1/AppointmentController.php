@@ -6,18 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
+use App\Http\Resources\SessionRecordResource;
 use App\Models\Appointment;
 use App\Models\Doctor;
 use App\Models\Patient;
 use App\Policies\AppointmentPolicy;
+use App\Services\AppointmentCheckoutService;
 use App\Services\AppointmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AppointmentController extends Controller
 {
-    public function __construct(private readonly AppointmentService $appointments)
-    {
+    public function __construct(
+        private readonly AppointmentService $appointments,
+        private readonly AppointmentCheckoutService $checkout
+    ) {
     }
 
     public function index(Request $request): JsonResponse
@@ -50,7 +54,7 @@ class AppointmentController extends Controller
 
     public function show(string $uuid): JsonResponse
     {
-        $appt = Appointment::where('uuid', $uuid)->with(['patient', 'doctor', 'services'])->firstOrFail();
+        $appt = Appointment::where('uuid', $uuid)->with(['patient', 'doctor', 'services', 'sessionRecord'])->firstOrFail();
         $this->authorize('view', $appt);
 
         return response()->json(new AppointmentResource($appt));
@@ -94,5 +98,22 @@ class AppointmentController extends Controller
         return response()->json(
             AppointmentResource::collection($this->appointments->byDoctor($doctor, request()))
         );
+    }
+
+    public function checkout(string $uuid): JsonResponse
+    {
+        $appt = Appointment::where('uuid', $uuid)
+            ->with(['patient', 'doctor', 'services', 'sessionRecord'])
+            ->firstOrFail();
+
+        $this->authorize('checkout', $appt);
+
+        $session = $this->checkout->checkout($appt, request()->user());
+        $appt->refresh()->load(['patient', 'doctor', 'services', 'sessionRecord']);
+
+        return response()->json([
+            'appointment'   => new AppointmentResource($appt),
+            'sessionRecord' => new SessionRecordResource($session),
+        ]);
     }
 }

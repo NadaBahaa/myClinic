@@ -1,4 +1,4 @@
-import { apiFetch, unwrapLaravelData } from '../api';
+import { apiFetch, unwrapLaravelData, apiDownload, apiUpload } from '../api';
 import type { MaterialOrTool } from '../../app/types/index';
 
 export const materialService = {
@@ -25,5 +25,15 @@ export const materialService = {
 
   async remove(uuid: string): Promise<void> {
     await apiFetch(`/materials-tools/${uuid}`, { method: 'DELETE' });
+  },
+
+  async exportSpreadsheet(): Promise<{ blob: Blob; filename?: string }> {
+    return apiDownload('/materials-tools/export/spreadsheet');
+  },
+
+  async importSpreadsheet(file: File): Promise<{ created: number; updated: number; skipped: number; errors: string[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiUpload('/materials-tools/import/spreadsheet', formData);
   },
 };

@@ -94,6 +94,8 @@ Route::prefix('v1')->group(function () {
             ->only(['index', 'show']);
 
         // Materials & Tools (CUD: role middleware on controller)
+        Route::get('materials-tools/export/spreadsheet', [MaterialOrToolController::class, 'exportSpreadsheet']);
+        Route::post('materials-tools/import/spreadsheet', [MaterialOrToolController::class, 'importSpreadsheet']);
         Route::apiResource('materials-tools', MaterialOrToolController::class);
 
         // Coupon preview (any authenticated user booking a session)
@@ -110,6 +112,7 @@ Route::prefix('v1')->group(function () {
         // Appointments — specific routes BEFORE apiResource to avoid capture
         Route::get('appointments/date/{date}',    [AppointmentController::class, 'byDate']);
         Route::get('appointments/doctor/{uuid}',  [AppointmentController::class, 'byDoctor']);
+        Route::post('appointments/{uuid}/checkout', [AppointmentController::class, 'checkout']);
         Route::apiResource('appointments', AppointmentController::class);
 
         // Patient Files (nested under patient)

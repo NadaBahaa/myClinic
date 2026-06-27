@@ -7,18 +7,20 @@ use App\Http\Requests\MaterialOrTool\StoreMaterialOrToolRequest;
 use App\Http\Requests\MaterialOrTool\UpdateMaterialOrToolRequest;
 use App\Http\Resources\MaterialOrToolResource;
 use App\Models\MaterialOrTool;
+use App\Services\MaterialSpreadsheetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MaterialOrToolController extends Controller
 {
-    public function __construct()
+    public function __construct(private readonly MaterialSpreadsheetService $spreadsheet)
     {
-        $this->middleware('role:admin,superadmin,assistant,doctor')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', MaterialOrTool::class);
+
         $query = MaterialOrTool::query();
 
         if ($type = $request->query('type')) {
@@ -37,6 +39,8 @@ class MaterialOrToolController extends Controller
 
     public function store(StoreMaterialOrToolRequest $request): JsonResponse
     {
+        $this->authorize('create', MaterialOrTool::class);
+
         $item = MaterialOrTool::create([
             'name'           => $request->name,
             'type'           => $request->type,
@@ -53,6 +57,7 @@ class MaterialOrToolController extends Controller
     public function show(string $uuid): JsonResponse
     {
         $item = MaterialOrTool::where('uuid', $uuid)->firstOrFail();
+        $this->authorize('view', $item);
 
         return response()->json(new MaterialOrToolResource($item));
     }
@@ -60,6 +65,7 @@ class MaterialOrToolController extends Controller
     public function update(UpdateMaterialOrToolRequest $request, string $uuid): JsonResponse
     {
         $item = MaterialOrTool::where('uuid', $uuid)->firstOrFail();
+        $this->authorize('update', $item);
 
         $data = [];
         if ($request->has('name'))          $data['name']           = $request->name;
@@ -78,8 +84,32 @@ class MaterialOrToolController extends Controller
     public function destroy(string $uuid): JsonResponse
     {
         $item = MaterialOrTool::where('uuid', $uuid)->firstOrFail();
+        $this->authorize('delete', $item);
         $item->delete();
 
         return response()->json(['message' => 'Item deleted']);
+    }
+
+    public function exportSpreadsheet()
+    {
+        $this->authorize('export', MaterialOrTool::class);
+
+        return $this->spreadsheet->export();
+    }
+
+    public function importSpreadsheet(Request $request): JsonResponse
+    {
+        $this->authorize('import', MaterialOrTool::class);
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        $result = $this->spreadsheet->import($request->file('file'));
+
+        return response()->json([
+            'message' => 'Import completed',
+            ...$result,
+        ]);
     }
 }
