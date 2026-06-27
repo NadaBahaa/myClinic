@@ -33,6 +33,22 @@ php artisan route:cache
 
 Point Apache/nginx to `backend/public`. See `deploy/aws/nginx.conf` for nginx.
 
+**This EC2 host uses split roots:** SPA at `/var/www/myklinic/dist`, API at `/var/www/myklinic/backend/public`. After `npm run build`, copy `dist/` to the server:
+
+```bash
+./scripts/deploy-ec2.sh
+# or manually rsync dist/ → /var/www/myklinic/dist/ (sudo + www-data)
+```
+
+After super-admin changes role tab visibility, run on the server:
+
+```bash
+cd /var/www/myklinic/backend
+sudo php artisan permissions:sync-role-defaults
+```
+
+This applies saved role defaults to all users (fixes stale `perm_*` columns).
+
 `backend/public/.htaccess` already sets JS/CSS MIME types and SPA routing.
 
 ---

@@ -42,7 +42,11 @@ if (existsSync(join(dist, 'assets'))) {
 
 cpSync(join(root, 'deploy/aws/static.htaccess'), join(dist, '.htaccess'))
 
-console.log('Done. Document root: backend/public')
+// Some EC2 nginx configs serve SPA from /var/www/myklinic/dist (API stays in backend/public).
+const serverDist = join(root, 'dist')
+console.log('SPA also ready at project dist/ (copy to /var/www/myklinic/dist on EC2 if nginx uses it)')
+
+console.log('Done. Document root: backend/public (or dist/ for split nginx setup)')
 console.log('  - SPA:  index.html')
 console.log('  - API:  /api/v1/* → Laravel index.php')
 console.log('Set APP_URL and run: cd backend && php artisan config:cache')
