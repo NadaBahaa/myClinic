@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, FolderOpen, Tag, Package } from 'lucide-react';
+import { Calendar, Users, UserCog, Sparkles, LogOut, Bell as BellIcon, Tag, Package } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../App';
 import CalendarView, { Appointment, toCalendarAppointment } from './CalendarView';
@@ -12,14 +13,28 @@ import CouponsView from './CouponsView';
 import MaterialsToolsView from './MaterialsToolsView';
 import { appointmentService } from '../../lib/services/appointmentService';
 import { formatLocalDateYYYYMMDD } from '../../lib/date';
+import { useRoleNavigation, useSyncActiveTab } from '../../lib/navigation/useRoleNavigation';
 
 type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'patients-day' | 'materials-tools';
+
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+  calendar: Calendar,
+  patients: Users,
+  doctors: UserCog,
+  services: Sparkles,
+  coupons: Tag,
+  'patients-day': BellIcon,
+  'materials-tools': Package,
+};
 
 export default function AssistantPortal() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
   const [showNotifications, setShowNotifications] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const { user, logout } = useAuth();
+  const { sidebarTabs, footerTabs, isTabVisible } = useRoleNavigation('assistant');
+
+  useSyncActiveTab(activeTab, setActiveTab, sidebarTabs);
 
   const loadPatientsOfDayAppointments = useCallback(() => {
     const today = new Date();
@@ -42,21 +57,7 @@ export default function AssistantPortal() {
 
   if (!user) return null;
 
-  const mv = user.moduleVisibility ?? {};
-  const tabs = [
-    { id: 'calendar' as Tab, label: 'Calendar', icon: Calendar, show: mv.calendar !== false && user.permissions.showCalendar },
-    { id: 'patients-day' as Tab, label: 'Patients of the Day', icon: BellIcon, show: mv.patients !== false && user.permissions.showPatients },
-    { id: 'patients' as Tab, label: 'All Patients', icon: Users, show: mv.patients !== false && user.permissions.showPatients },
-    { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, show: mv.doctors !== false && user.permissions.showDoctors },
-    { id: 'services' as Tab, label: 'Services', icon: Sparkles, show: mv.services !== false && user.permissions.showServices },
-    { id: 'coupons' as Tab, label: 'Coupons', icon: Tag, show: mv.services !== false && user.permissions.showServices },
-    {
-      id: 'materials-tools' as Tab,
-      label: 'Materials & Tools',
-      icon: Package,
-      show: mv.materials_tools !== false && user.permissions.showMaterialsTools,
-    },
-  ];
+  const showNotificationsFooter = footerTabs.some((t) => t.id === 'notifications');
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -78,12 +79,12 @@ export default function AssistantPortal() {
 
         <nav className="flex-1 overflow-y-auto min-h-0 p-4">
           <div className="space-y-1">
-            {tabs.filter(tab => tab.show).map((tab) => {
-              const Icon = tab.icon;
+            {sidebarTabs.map((tab) => {
+              const Icon = TAB_ICONS[tab.id as Tab] ?? Sparkles;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => setActiveTab(tab.id as Tab)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === tab.id
                       ? 'bg-pink-50 text-pink-700'
@@ -99,14 +100,16 @@ export default function AssistantPortal() {
         </nav>
 
         <div className="p-4 flex-shrink-0 border-t border-gray-200 space-y-1">
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors relative"
-          >
-            <BellIcon className="w-5 h-5" />
-            <span>Notifications</span>
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          {showNotificationsFooter && (
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors relative"
+            >
+              <BellIcon className="w-5 h-5" />
+              <span>Notifications</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+          )}
           <button
             onClick={logout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
@@ -119,24 +122,28 @@ export default function AssistantPortal() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 relative">
-        {activeTab === 'calendar' && mv.calendar !== false && user.permissions.showCalendar && <CalendarView />}
-        {activeTab === 'patients-day' && mv.patients !== false && user.permissions.showPatients && (
+        {sidebarTabs.length === 0 && (
+          <p className="text-gray-500">No modules are enabled for your account. Contact a super admin.</p>
+        )}
+
+        {activeTab === 'calendar' && isTabVisible('calendar') && <CalendarView />}
+        {activeTab === 'patients-day' && isTabVisible('patients-day') && (
           <PatientsOfDayView
             appointments={appointments}
             userRole="assistant"
             currentUserId={user.id}
           />
         )}
-        {activeTab === 'patients' && mv.patients !== false && user.permissions.showPatients && <PatientsView />}
-        {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
-        {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
-        {activeTab === 'coupons' && mv.services !== false && user.permissions.showServices && <CouponsView />}
-        {activeTab === 'materials-tools' && mv.materials_tools !== false && user.permissions.showMaterialsTools && (
+        {activeTab === 'patients' && isTabVisible('patients') && <PatientsView />}
+        {activeTab === 'doctors' && isTabVisible('doctors') && <DoctorsView />}
+        {activeTab === 'services' && isTabVisible('services') && <ServicesView />}
+        {activeTab === 'coupons' && isTabVisible('coupons') && <CouponsView />}
+        {activeTab === 'materials-tools' && isTabVisible('materials-tools') && (
           <MaterialsToolsView />
         )}
 
         {/* Notification Panel */}
-        {showNotifications && (
+        {showNotifications && showNotificationsFooter && (
           <NotificationPanel onClose={() => setShowNotifications(false)} />
         )}
       </main>

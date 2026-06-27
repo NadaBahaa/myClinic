@@ -26,6 +26,7 @@ import {
 } from '../../lib/services/superAdminService';
 import { userService } from '../../lib/services/userService';
 import { Switch } from './ui/switch';
+import RoleNavigationPreview from './RoleNavigationPreview';
 import { toast } from 'sonner';
 
 const DEFAULT_PERMISSIONS: Record<string, { showCalendar: boolean; showPatients: boolean; showDoctors: boolean; showServices: boolean; showUsers: boolean; showSettings: boolean; showActivityLog: boolean; showReports: boolean; showMaterialsTools: boolean; showPractitionerTypes: boolean }> = {
@@ -73,7 +74,12 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     if (activeTab === 'modules') {
       setLoading(true);
-      superAdminService.getModules().then(setModules).catch(() => toast.error('Failed to load modules')).finally(() => setLoading(false));
+      Promise.all([
+        superAdminService.getModules().then(setModules),
+        superAdminService.getRoleTabVisibility().then(setRoleTabVisibility),
+      ])
+        .catch(() => toast.error('Failed to load modules'))
+        .finally(() => setLoading(false));
     }
   }, [activeTab]);
 
@@ -115,7 +121,12 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     if (activeTab === 'tab-visibility') {
       setLoading(true);
-      superAdminService.getRoleTabVisibility().then(setRoleTabVisibility).catch(() => toast.error('Failed to load role tab visibility')).finally(() => setLoading(false));
+      Promise.all([
+        superAdminService.getRoleTabVisibility().then(setRoleTabVisibility),
+        superAdminService.getModules().then(setModules),
+      ])
+        .catch(() => toast.error('Failed to load role tab visibility'))
+        .finally(() => setLoading(false));
     }
   }, [activeTab]);
 
@@ -338,6 +349,9 @@ export default function SuperAdminDashboard() {
                     Save tab visibility
                   </button>
                 )}
+                {!loading && modules.length > 0 && (
+                  <RoleNavigationPreview modules={modules} roleTabVisibility={roleTabVisibility} />
+                )}
               </>
             )}
           </div>
@@ -388,6 +402,7 @@ export default function SuperAdminDashboard() {
                     Save changes
                   </button>
                 )}
+                <RoleNavigationPreview modules={modules} roleTabVisibility={roleTabVisibility} />
               </>
             )}
           </div>

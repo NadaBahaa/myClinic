@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calendar, Users, UserCog, Sparkles, LogOut, Settings, Bell, Shield, Briefcase, Package, History, BarChart3, Tag } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '../App';
 import CalendarView from './CalendarView';
 import PatientsView from './PatientsView';
@@ -14,31 +15,34 @@ import BacklogView from './BacklogView';
 import AccountantDashboard from './AccountantDashboard';
 import CouponsView from './CouponsView';
 import AdminNotificationsView from './AdminNotificationsView';
+import { useRoleNavigation, useSyncActiveTab } from '../../lib/navigation/useRoleNavigation';
 
 type Tab = 'calendar' | 'patients' | 'doctors' | 'services' | 'coupons' | 'users' | 'settings' | 'practitioner-types' | 'materials-tools' | 'backlog' | 'reports' | 'notifications';
+
+const TAB_ICONS: Record<Tab, LucideIcon> = {
+  calendar: Calendar,
+  patients: Users,
+  doctors: UserCog,
+  services: Sparkles,
+  coupons: Tag,
+  users: Shield,
+  settings: Settings,
+  'practitioner-types': Briefcase,
+  'materials-tools': Package,
+  backlog: History,
+  reports: BarChart3,
+  notifications: Bell,
+};
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar');
   const [showNotifications, setShowNotifications] = useState(false);
-  const { user, logout, updateAllUsers } = useAuth();
+  const { user, logout } = useAuth();
+  const { sidebarTabs, isTabVisible } = useRoleNavigation('admin');
+
+  useSyncActiveTab(activeTab, setActiveTab, sidebarTabs);
 
   if (!user) return null;
-
-  const mv = user.moduleVisibility ?? {};
-  const tabs = [
-    { id: 'calendar' as Tab, label: 'Calendar', icon: Calendar, moduleKey: 'calendar', show: mv.calendar !== false && user.permissions.showCalendar },
-    { id: 'patients' as Tab, label: 'Patients', icon: Users, moduleKey: 'patients', show: mv.patients !== false && user.permissions.showPatients },
-    { id: 'doctors' as Tab, label: 'Doctors', icon: UserCog, moduleKey: 'doctors', show: mv.doctors !== false && user.permissions.showDoctors },
-    { id: 'services' as Tab, label: 'Services', icon: Sparkles, moduleKey: 'services', show: mv.services !== false && user.permissions.showServices },
-    { id: 'coupons' as Tab, label: 'Coupons', icon: Tag, moduleKey: 'services', show: mv.services !== false && user.permissions.showServices },
-    { id: 'materials-tools' as Tab, label: 'Materials & Tools', icon: Package, moduleKey: 'materials_tools', show: mv.materials_tools !== false && user.permissions.showMaterialsTools },
-    { id: 'practitioner-types' as Tab, label: 'Practitioner Types', icon: Briefcase, moduleKey: 'practitioner_types', show: mv.practitioner_types !== false && user.permissions.showPractitionerTypes },
-    { id: 'users' as Tab, label: 'Users', icon: Shield, moduleKey: 'users', show: mv.users !== false && user.permissions.showUsers },
-    { id: 'backlog' as Tab, label: 'Activity Log', icon: History, moduleKey: 'activity_log', show: mv.activity_log !== false && user.permissions.showActivityLog },
-    { id: 'reports' as Tab, label: 'Sales & Export', icon: BarChart3, moduleKey: 'reports', show: mv.reports !== false && user.permissions.showReports },
-    { id: 'notifications' as Tab, label: 'Notifications', icon: Bell, moduleKey: 'notifications', show: true },
-    { id: 'settings' as Tab, label: 'Settings', icon: Settings, moduleKey: 'settings', show: mv.settings !== false && user.permissions.showSettings },
-  ];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -60,12 +64,12 @@ export default function AdminDashboard() {
 
         <nav className="flex-1 overflow-y-auto min-h-0 p-4">
           <div className="space-y-1">
-            {tabs.filter(tab => tab.show).map((tab) => {
-              const Icon = tab.icon;
+            {sidebarTabs.map((tab) => {
+              const Icon = TAB_ICONS[tab.id as Tab] ?? Sparkles;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => setActiveTab(tab.id as Tab)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === tab.id
                       ? 'bg-pink-50 text-pink-700'
@@ -103,24 +107,28 @@ export default function AdminDashboard() {
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
         </button>
 
-        {activeTab === 'calendar' && mv.calendar !== false && user.permissions.showCalendar && <CalendarView />}
-        {activeTab === 'patients' && mv.patients !== false && user.permissions.showPatients && <PatientsView />}
-        {activeTab === 'doctors' && mv.doctors !== false && user.permissions.showDoctors && <DoctorsView />}
-        {activeTab === 'services' && mv.services !== false && user.permissions.showServices && <ServicesView />}
-        {activeTab === 'coupons' && mv.services !== false && user.permissions.showServices && <CouponsView />}
-        {activeTab === 'materials-tools' && mv.materials_tools !== false && user.permissions.showMaterialsTools && <MaterialsToolsView />}
-        {activeTab === 'practitioner-types' && mv.practitioner_types !== false && user.permissions.showPractitionerTypes && <PractitionerTypesView />}
-        {activeTab === 'users' && mv.users !== false && user.permissions.showUsers && <UsersView onUsersUpdate={updateAllUsers} />}
-        {activeTab === 'backlog' && mv.activity_log !== false && user.permissions.showActivityLog && <BacklogView />}
-        {activeTab === 'reports' && mv.reports !== false && user.permissions.showReports && <AccountantDashboard embedded />}
-        {activeTab === 'notifications' && (
+        {sidebarTabs.length === 0 && (
+          <p className="text-gray-500">No modules are enabled for your account. Contact a super admin.</p>
+        )}
+
+        {activeTab === 'calendar' && isTabVisible('calendar') && <CalendarView />}
+        {activeTab === 'patients' && isTabVisible('patients') && <PatientsView />}
+        {activeTab === 'doctors' && isTabVisible('doctors') && <DoctorsView />}
+        {activeTab === 'services' && isTabVisible('services') && <ServicesView />}
+        {activeTab === 'coupons' && isTabVisible('coupons') && <CouponsView />}
+        {activeTab === 'materials-tools' && isTabVisible('materials-tools') && <MaterialsToolsView />}
+        {activeTab === 'practitioner-types' && isTabVisible('practitioner-types') && <PractitionerTypesView />}
+        {activeTab === 'users' && isTabVisible('users') && <UsersView />}
+        {activeTab === 'backlog' && isTabVisible('backlog') && <BacklogView />}
+        {activeTab === 'reports' && isTabVisible('reports') && <AccountantDashboard embedded />}
+        {activeTab === 'notifications' && isTabVisible('notifications') && (
           <div className="p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Patient Notifications</h2>
             <p className="text-sm text-gray-500 mb-6">View per-patient notification counts, sent messages, and send reminders to upcoming appointments.</p>
             <AdminNotificationsView />
           </div>
         )}
-        {activeTab === 'settings' && mv.settings !== false && user.permissions.showSettings && <SettingsView />}
+        {activeTab === 'settings' && isTabVisible('settings') && <SettingsView />}
 
         {/* Notification Panel */}
         {showNotifications && (

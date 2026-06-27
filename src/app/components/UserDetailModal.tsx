@@ -28,6 +28,7 @@ export interface SystemUser {
 
 interface UserDetailModalProps {
   user: SystemUser | null;
+  saving?: boolean;
   onClose: () => void;
   onSave: (user: SystemUser) => void;
   existingEmails: string[];
@@ -84,22 +85,29 @@ const defaultPermissions: Record<string, UserPermissions> = {
   },
 };
 
-export default function UserDetailModal({ user, onClose, onSave, existingEmails }: UserDetailModalProps) {
+export default function UserDetailModal({ user, saving = false, onClose, onSave, existingEmails }: UserDetailModalProps) {
   const isEditing = !!user;
   const { getActivePractitionerTypes, getPractitionerTypeById } = usePractitionerTypes();
   const activePractitionerTypes = getActivePractitionerTypes();
-  
-  const [formData, setFormData] = useState<SystemUser>(
-    user || {
-      id: '',
-      name: '',
-      email: '',
-      password: '',
-      role: 'assistant',
-      practitionerTypeId: undefined,
-      permissions: defaultPermissions.assistant,
-    }
-  );
+
+  const buildFormState = (source: SystemUser | null): SystemUser =>
+    source
+      ? {
+          ...source,
+          password: '',
+          permissions: { ...defaultPermissions[source.role], ...source.permissions },
+        }
+      : {
+          id: '',
+          name: '',
+          email: '',
+          password: '',
+          role: 'assistant',
+          practitionerTypeId: undefined,
+          permissions: { ...defaultPermissions.assistant },
+        };
+
+  const [formData, setFormData] = useState<SystemUser>(() => buildFormState(user));
 
   const selectedPractitionerType = formData.practitionerTypeId 
     ? getPractitionerTypeById(formData.practitionerTypeId)
@@ -168,7 +176,6 @@ export default function UserDetailModal({ user, onClose, onSave, existingEmails 
     };
 
     onSave(userData);
-    onClose();
   };
 
   const permissionLabels: Record<string, string> = {
@@ -379,15 +386,17 @@ export default function UserDetailModal({ user, onClose, onSave, existingEmails 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={saving}
+              className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors"
+              disabled={saving}
+              className="flex-1 px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50"
             >
-              {isEditing ? 'Update' : 'Add'} User
+              {saving ? 'Saving...' : isEditing ? 'Update User' : 'Add User'}
             </button>
           </div>
         </form>

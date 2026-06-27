@@ -20,6 +20,7 @@ import MaterialsToolsView from "./MaterialsToolsView";
 import { appointmentService } from "../../lib/services/appointmentService";
 import { toast } from "sonner";
 import { formatLocalDateYYYYMMDD } from "../../lib/date";
+import { useRoleNavigation, useSyncActiveTab } from "../../lib/navigation/useRoleNavigation";
 
 function toTimeHHMM(t: string): string {
   if (!t) return "";
@@ -60,6 +61,7 @@ function toCalendarAppointment(api: {
 
 export default function DoctorPortal() {
   const { user, logout } = useAuth();
+  const { sidebarTabs, isTabVisible } = useRoleNavigation('doctor');
   const [activeTab, setActiveTab] = useState<"calendar" | "patients-day" | "my-patients" | "materials-tools">("calendar");
   const [view, setView] = useState<"daily" | "monthly">("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -118,20 +120,15 @@ export default function DoctorPortal() {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  useSyncActiveTab(activeTab, setActiveTab, sidebarTabs);
+
   if (!user) return null;
 
-  const mv = user.moduleVisibility ?? {};
-  const showCalendarModule = mv.calendar !== false && user.permissions.showCalendar;
-  const showPatientsModule = mv.patients !== false && user.permissions.showPatients;
-  const showMaterialsModule = mv.materials_tools !== false && user.permissions.showMaterialsTools;
-  const showDailyView = showCalendarModule;
-  const showMonthlyView = showCalendarModule;
+  const showCalendarModule = isTabVisible('calendar');
 
-  // Default to first visible tab when current is hidden by module
-  useEffect(() => {
-    if (activeTab === "calendar" && !showCalendarModule && showPatientsModule) setActiveTab("patients-day");
-    if ((activeTab === "patients-day" || activeTab === "my-patients") && !showPatientsModule && showCalendarModule) setActiveTab("calendar");
-  }, [showCalendarModule, showPatientsModule]);
+  const showDailyView = showCalendarModule;
+
+  const showMonthlyView = showCalendarModule;
 
   const handlePrevious = () => {
     const newDate = new Date(currentDate);
@@ -238,66 +235,40 @@ export default function DoctorPortal() {
         {/* Navigation Tabs */}
         <div className="mb-6 border-b border-gray-200">
           <div className="flex flex-wrap gap-2">
-            {showCalendarModule && (
-              <button
-                onClick={() => setActiveTab("calendar")}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === "calendar"
-                    ? "border-pink-600 text-pink-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <Calendar className="w-5 h-5" />
-                My Schedule
-              </button>
-            )}
-            {showPatientsModule && (
-              <>
+            {sidebarTabs.map((tab) => {
+              const icons: Record<string, typeof Calendar> = {
+                calendar: Calendar,
+                'patients-day': Bell,
+                'my-patients': FolderOpen,
+                'materials-tools': Package,
+              };
+              const Icon = icons[tab.id] ?? Calendar;
+              return (
                 <button
-                  onClick={() => setActiveTab("patients-day")}
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                    activeTab === "patients-day"
+                    activeTab === tab.id
                       ? "border-pink-600 text-pink-600"
                       : "border-transparent text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  <Bell className="w-5 h-5" />
-                  Patients of the Day
+                  <Icon className="w-5 h-5" />
+                  {tab.label}
                 </button>
-                <button
-                  onClick={() => setActiveTab("my-patients")}
-                  className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                    activeTab === "my-patients"
-                      ? "border-pink-600 text-pink-600"
-                      : "border-transparent text-gray-600 hover:text-gray-900"
-                  }`}
-                >
-                  <FolderOpen className="w-5 h-5" />
-                  My Patients
-                </button>
-              </>
-            )}
-            {showMaterialsModule && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("materials-tools")}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                  activeTab === "materials-tools"
-                    ? "border-pink-600 text-pink-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                <Package className="w-5 h-5" />
-                Materials & Tools
-              </button>
-            )}
+              );
+            })}
           </div>
         </div>
 
-        {showMaterialsModule && activeTab === "materials-tools" && <MaterialsToolsView />}
+        {sidebarTabs.length === 0 && (
+          <p className="text-gray-500">No modules are enabled for your account. Contact a super admin.</p>
+        )}
+
+        {isTabVisible('materials-tools') && activeTab === "materials-tools" && <MaterialsToolsView />}
 
         {/* Patients of the Day Tab */}
-        {showPatientsModule && activeTab === "patients-day" && (
+        {isTabVisible('patients-day') && activeTab === "patients-day" && (
           <PatientsOfDayView
             appointments={appointments}
             userRole="doctor"
@@ -306,12 +277,12 @@ export default function DoctorPortal() {
         )}
 
         {/* My Patients Tab */}
-        {showPatientsModule && activeTab === "my-patients" && (
+        {isTabVisible('my-patients') && activeTab === "my-patients" && (
           <PatientsView isDoctorView={true} doctorId={user.doctorId ?? user.id} doctorName={user.name} />
         )}
 
         {/* Calendar Tab */}
-        {showCalendarModule && activeTab === "calendar" && (
+        {isTabVisible('calendar') && activeTab === "calendar" && (
           <>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

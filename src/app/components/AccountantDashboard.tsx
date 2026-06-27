@@ -8,6 +8,7 @@ import {
   LineChart, Line, ResponsiveContainer, PieChart as RPieChart, Pie, Cell,
 } from 'recharts';
 import { useAuth } from '../App';
+import { useRoleNavigation } from '../../lib/navigation/useRoleNavigation';
 import { reportsService, type ReportSession, type FinancialReportResponse } from '../../lib/services/reportsService';
 import { patientFileService } from '../../lib/services/patientFileService';
 import { authService } from '../../lib/services/authService';
@@ -23,6 +24,8 @@ type ReportView = 'overview' | 'sessions' | 'doctors' | 'services';
 
 export default function AccountantDashboard({ embedded = false }: AccountantDashboardProps) {
   const { user, logout } = useAuth();
+  const { isTabVisible } = useRoleNavigation('accountant');
+  const reportsEnabled = isTabVisible('reports');
   const [activeView, setActiveView] = useState<ReportView>('overview');
 
   // Sessions list state
@@ -121,6 +124,26 @@ export default function AccountantDashboard({ embedded = false }: AccountantDash
   };
 
   if (!user && !embedded) return null;
+
+  if (!embedded && !reportsEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-8">
+        <div className="max-w-md text-center">
+          <BarChart2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Reports module disabled</h1>
+          <p className="text-gray-600 mb-6">
+            Sales &amp; reports are not enabled for your role. Contact a super admin to turn this module on.
+          </p>
+          <button
+            onClick={() => authService.logout().then(() => logout())}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const nav: { label: string; view: ReportView; icon: React.ReactNode }[] = [
     { label: 'Overview', view: 'overview', icon: <BarChart2 className="w-4 h-4" /> },

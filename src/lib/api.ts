@@ -10,7 +10,9 @@ function resolveApiBaseUrl(): string {
   if (import.meta.env.DEV) {
     return '/api/v1';
   }
-  return 'http://localhost/Beauty%20Clinic%20Management%20App%20(Final-2)/backend/public/api/v1';
+  // Production default: same-origin Laravel API (EC2/Apache, single-domain AWS deploy).
+  // Override with VITE_API_BASE_URL when the API is on a different host (e.g. CloudFront + ALB).
+  return '/api/v1';
 }
 
 /**

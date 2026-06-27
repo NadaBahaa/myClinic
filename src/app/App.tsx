@@ -14,6 +14,7 @@ import SuperAdminDashboard from './components/SuperAdminDashboard';
 import type { SystemUser, UserPermissions } from './components/UserDetailModal';
 import { PractitionerTypeProvider } from './contexts/PractitionerTypeContext';
 import { authService } from '../lib/services/authService';
+import { useAuthStore } from '../lib/stores/authStore';
 import { dispatchAuthSessionChanged, getToken } from '../lib/api';
 import { resolveIdleLogoutMs, useIdleLogout } from '../lib/useIdleLogout';
 
@@ -103,9 +104,12 @@ function canRoleAccessPage(page: PageState, role: UserRole): boolean {
 }
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const allUsers = useAuthStore((s) => s.allUsers);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setAllUsers = useAuthStore((s) => s.setAllUsers);
+  const clearSession = useAuthStore((s) => s.clearSession);
   const [currentPage, setCurrentPage] = useState<PageState>('landing');
-  const [allUsers, setAllUsers] = useState<SystemUser[]>([]);
 
   const goToDashboard = useCallback((role: UserRole) => {
     const page = roleToDashboardPage(role);
@@ -160,6 +164,19 @@ function App() {
     syncLocationToState();
   }, [syncLocationToState]);
 
+  // Refresh module visibility when the window regains focus (after super-admin changes).
+  useEffect(() => {
+    if (!user || !getToken()) return;
+    const refreshSession = () => {
+      authService
+        .me()
+        .then((me) => setUser(me))
+        .catch(() => {});
+    };
+    window.addEventListener('focus', refreshSession);
+    return () => window.removeEventListener('focus', refreshSession);
+  }, [user?.id, setUser]);
+
   useEffect(() => {
     const onPop = () => syncLocationToState();
     window.addEventListener('popstate', onPop);
@@ -186,8 +203,7 @@ function App() {
 
     // Handle 401 Unauthorized from any API call
     const handle401 = () => {
-      setUser(null);
-      setAllUsers([]);
+      clearSession();
       setCurrentPage('landing');
       window.history.replaceState({}, '', '/');
       dispatchAuthSessionChanged();
@@ -215,13 +231,12 @@ function App() {
 
   const logout = useCallback(() => {
     authService.logout().finally(() => {
-      setUser(null);
-      setAllUsers([]);
+      clearSession();
       setCurrentPage('landing');
       window.history.replaceState({}, '', '/');
       dispatchAuthSessionChanged();
     });
-  }, []);
+  }, [clearSession]);
 
   const idleLogoutMs = resolveIdleLogoutMs();
   const handleIdleLogout = useCallback(() => {
@@ -235,9 +250,9 @@ function App() {
     onIdle: handleIdleLogout,
   });
 
-  const updateAllUsers = (users: SystemUser[]) => {
+  const updateAllUsers = useCallback((users: SystemUser[]) => {
     setAllUsers(users);
-  };
+  }, [setAllUsers]);
 
   const openLandingLogin = () => {
     setCurrentPage('login');
